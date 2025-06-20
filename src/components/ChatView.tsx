@@ -43,8 +43,8 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { fetchFinancialData, extractSymbolsFromText } = useFinancialData();
-  const { analyzeFinancialData, isGenerating } = useGemini();
+  const { fetchFinancialData } = useFinancialData();
+  const { analyzeFinancialData, extractSymbolsWithAI, isGenerating } = useGemini();
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -104,9 +104,9 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
     setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      console.log('Extrayendo símbolos de:', userMessage);
-      const symbols = await extractSymbolsFromText(userMessage);
-      console.log('Símbolos extraídos:', symbols);
+      console.log('Extrayendo símbolos con IA para:', userMessage);
+      const symbols = await extractSymbolsWithAI(userMessage);
+      console.log('Símbolos extraídos por IA:', symbols);
       
       let financialData: any[] = [];
       if (symbols.length > 0) {

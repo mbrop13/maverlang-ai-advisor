@@ -19,6 +19,65 @@ export const useGemini = () => {
   const apiKey = "AIzaSyBTjEoZrwh9LiDFKghBNMBzk_9eaYVJW3o";
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
+  const extractSymbolsWithAI = async (userMessage: string): Promise<string[]> => {
+    try {
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Analiza el siguiente mensaje del usuario y extrae ÚNICAMENTE los símbolos bursátiles (tickers) válidos que se mencionan. 
+
+REGLAS IMPORTANTES:
+1. Solo devuelve símbolos bursátiles reales (como AAPL, MSFT, TSLA, etc.)
+2. NO incluyas palabras comunes como "sobre", "información", "análisis", etc.
+3. Si se menciona el nombre de una empresa, convierte al símbolo (ej: "Apple" → "AAPL", "Microsoft" → "MSFT")
+4. Devuelve máximo 5 símbolos
+5. Responde ÚNICAMENTE con una lista separada por comas, sin explicaciones adicionales
+
+Mensaje del usuario: "${userMessage}"
+
+Ejemplo de respuesta correcta: "AAPL,MSFT,TSLA"`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          topP: 0.1,
+          maxOutputTokens: 100,
+        }
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error de API: ${response.status}`);
+      }
+
+      const data: GeminiResponse = await response.json();
+      
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        const extractedText = data.candidates[0].content.parts[0].text.trim();
+        const symbols = extractedText.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0 && s.length <= 5);
+        console.log('Símbolos extraídos por IA:', symbols);
+        return symbols;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error extrayendo símbolos con IA:', error);
+      return [];
+    }
+  };
+
   const analyzeFinancialData = async (userMessage: string, financialData: any[]) => {
     setIsGenerating(true);
     
@@ -132,6 +191,7 @@ ${financialData.map(item => {
 
   return {
     analyzeFinancialData,
+    extractSymbolsWithAI,
     isGenerating
   };
 };
