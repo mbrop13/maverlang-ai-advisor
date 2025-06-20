@@ -26,18 +26,31 @@ export const useGemini = () => {
           {
             parts: [
               {
-                text: `Analiza el siguiente mensaje del usuario y extrae ÚNICAMENTE los símbolos bursátiles (tickers) válidos que se mencionan. 
+                text: `Analiza el siguiente mensaje del usuario y extrae ÚNICAMENTE los símbolos bursátiles (tickers) válidos de empresas que cotizan en bolsa.
 
-REGLAS IMPORTANTES:
-1. Solo devuelve símbolos bursátiles reales (como AAPL, MSFT, TSLA, etc.)
-2. NO incluyas palabras comunes como "sobre", "información", "análisis", etc.
-3. Si se menciona el nombre de una empresa, convierte al símbolo (ej: "Apple" → "AAPL", "Microsoft" → "MSFT")
-4. Devuelve máximo 5 símbolos
-5. Responde ÚNICAMENTE con una lista separada por comas, sin explicaciones adicionales
+REGLAS ESTRICTAS:
+1. Solo devuelve símbolos de empresas reales que cotizan en bolsa (AAPL, MSFT, TSLA, GOOGL, AMZN, META, NVDA, etc.)
+2. NO incluyas palabras comunes como "sobre", "de", "dame", "información", "análisis", "empresa", etc.
+3. Si se menciona el nombre de una empresa conocida, devuelve su símbolo oficial:
+   - Apple → AAPL
+   - Microsoft → MSFT  
+   - Tesla → TSLA
+   - Google/Alphabet → GOOGL
+   - Amazon → AMZN
+   - Meta/Facebook → META
+   - Nvidia → NVDA
+   - Netflix → NFLX
+4. Máximo 3 símbolos por respuesta
+5. Si no encuentras símbolos válidos, devuelve una lista vacía
+6. Responde SOLO con los símbolos separados por comas, sin explicaciones
 
 Mensaje del usuario: "${userMessage}"
 
-Ejemplo de respuesta correcta: "AAPL,MSFT,TSLA"`
+Ejemplos:
+- "información sobre Apple" → "AAPL"
+- "análisis de Tesla y Microsoft" → "TSLA,MSFT"
+- "dame datos sobre la empresa" → ""
+- "cómo está NIO hoy" → "NIO"`
               }
             ]
           }
@@ -46,7 +59,7 @@ Ejemplo de respuesta correcta: "AAPL,MSFT,TSLA"`
           temperature: 0.1,
           topK: 1,
           topP: 0.1,
-          maxOutputTokens: 100,
+          maxOutputTokens: 50,
         }
       };
 
@@ -66,7 +79,23 @@ Ejemplo de respuesta correcta: "AAPL,MSFT,TSLA"`
       
       if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
         const extractedText = data.candidates[0].content.parts[0].text.trim();
-        const symbols = extractedText.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0 && s.length <= 5);
+        
+        // Si la respuesta está vacía o es muy corta, no hay símbolos válidos
+        if (!extractedText || extractedText.length < 2) {
+          return [];
+        }
+        
+        // Filtrar y validar símbolos
+        const symbols = extractedText
+          .split(',')
+          .map(s => s.trim().toUpperCase())
+          .filter(s => {
+            // Solo símbolos de 1-5 caracteres que no sean palabras comunes
+            const commonWords = ['SOBRE', 'DE', 'DAME', 'INFO', 'ANALISIS', 'EMPRESA', 'DATOS', 'HOY'];
+            return s.length >= 1 && s.length <= 5 && !commonWords.includes(s) && /^[A-Z]+$/.test(s);
+          })
+          .slice(0, 3); // Máximo 3 símbolos
+        
         console.log('Símbolos extraídos por IA:', symbols);
         return symbols;
       }
