@@ -1,15 +1,18 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
   Activity,
   PieChart,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardProps {
   appState: any;
@@ -17,7 +20,7 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ appState }: DashboardProps) => {
-  const marketStats = [
+  const [marketStats, setMarketStats] = useState([
     {
       name: 'S&P 500',
       value: '4,782.20',
@@ -46,20 +49,85 @@ export const Dashboard = ({ appState }: DashboardProps) => {
       isPositive: true,
       icon: Activity
     }
-  ];
+  ]);
 
-  const topStocks = [
+  const [topStocks, setTopStocks] = useState([
     { symbol: 'AAPL', name: 'Apple Inc.', price: 193.58, change: 2.45, volume: '47.8M' },
     { symbol: 'MSFT', name: 'Microsoft', price: 378.85, change: -1.23, volume: '28.3M' },
     { symbol: 'GOOGL', name: 'Alphabet', price: 142.56, change: 1.87, volume: '35.2M' },
     { symbol: 'TSLA', name: 'Tesla', price: 248.42, change: 3.21, volume: '89.1M' },
     { symbol: 'NVDA', name: 'NVIDIA', price: 721.33, change: 4.56, volume: '52.7M' }
-  ];
+  ]);
+
+  const [is
+
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const refreshData = async () => {
+    setIsLoading(true);
+    try {
+      // Simular actualización de datos
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Actualizar datos con variación aleatoria
+      setMarketStats(prev => prev.map(stat => ({
+        ...stat,
+        value: (parseFloat(stat.value.replace(',', '')) + (Math.random() - 0.5) * 100).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }),
+        change: `${Math.random() > 0.5 ? '+' : ''}${((Math.random() - 0.5) * 4).toFixed(1)}%`,
+        isPositive: Math.random() > 0.5
+      })));
+
+      setTopStocks(prev => prev.map(stock => ({
+        ...stock,
+        price: stock.price + (Math.random() - 0.5) * 10,
+        change: (Math.random() - 0.5) * 6
+      })));
+
+      toast({
+        title: "Datos actualizados",
+        description: "La información del mercado se ha actualizado correctamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los datos.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(refreshData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-full">
       <div className="max-w-7xl mx-auto">
         
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Resumen del mercado en tiempo real</p>
+          </div>
+          <Button
+            onClick={refreshData}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
+
         {/* Market Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {marketStats.map((stat) => {
@@ -106,10 +174,10 @@ export const Dashboard = ({ appState }: DashboardProps) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">${stock.price}</p>
+                    <p className="font-semibold text-gray-900">${stock.price.toFixed(2)}</p>
                     <div className="flex items-center gap-1">
                       <span className={`text-sm font-medium ${stock.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {stock.change > 0 ? '+' : ''}{stock.change}%
+                        {stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%
                       </span>
                       <Badge variant="outline" className="text-xs">
                         {stock.volume}

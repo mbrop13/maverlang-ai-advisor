@@ -7,15 +7,49 @@ export const useFinancialData = () => {
   const { toast } = useToast();
 
   const extractSymbolsFromText = async (text: string): Promise<string[]> => {
+    const normalizedText = text.toUpperCase();
+    
+    // Patrones mejorados para detectar símbolos
     const stockPattern = /\b[A-Z]{1,5}\b/g;
-    const matches = text.match(stockPattern) || [];
+    const companyMentions = {
+      'APPLE': 'AAPL',
+      'MICROSOFT': 'MSFT',
+      'GOOGLE': 'GOOGL',
+      'ALPHABET': 'GOOGL',
+      'AMAZON': 'AMZN',
+      'TESLA': 'TSLA',
+      'META': 'META',
+      'FACEBOOK': 'META',
+      'NVIDIA': 'NVDA',
+      'NETFLIX': 'NFLX',
+      'AMD': 'AMD',
+      'INTEL': 'INTC',
+      'SALESFORCE': 'CRM',
+      'ORACLE': 'ORCL',
+      'IBM': 'IBM',
+      'CISCO': 'CSCO'
+    };
     
-    const commonSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC'];
-    const foundSymbols = matches.filter(symbol => 
-      commonSymbols.includes(symbol) || symbol.length <= 5
-    );
+    const foundSymbols: Set<string> = new Set();
     
-    return [...new Set(foundSymbols)].slice(0, 5);
+    // Buscar menciones de empresas
+    Object.entries(companyMentions).forEach(([company, symbol]) => {
+      if (normalizedText.includes(company)) {
+        foundSymbols.add(symbol);
+      }
+    });
+    
+    // Buscar patrones de símbolos
+    const matches = normalizedText.match(stockPattern) || [];
+    const commonSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC', 'CRM', 'ORCL', 'IBM', 'CSCO'];
+    
+    matches.forEach(match => {
+      if (commonSymbols.includes(match) || match.length <= 5) {
+        foundSymbols.add(match);
+      }
+    });
+    
+    return Array.from(foundSymbols).slice(0, 5);
   };
 
   const fetchFinancialData = async (symbols: string[]) => {
@@ -66,7 +100,11 @@ export const useFinancialData = () => {
       'NVDA': 'NVIDIA Corporation',
       'NFLX': 'Netflix Inc.',
       'AMD': 'Advanced Micro Devices',
-      'INTC': 'Intel Corporation'
+      'INTC': 'Intel Corporation',
+      'CRM': 'Salesforce Inc.',
+      'ORCL': 'Oracle Corporation',
+      'IBM': 'International Business Machines',
+      'CSCO': 'Cisco Systems Inc.'
     };
     return names[symbol] || `${symbol} Corporation`;
   };
@@ -82,7 +120,11 @@ export const useFinancialData = () => {
       'NVDA': 'Technology',
       'NFLX': 'Entertainment',
       'AMD': 'Technology',
-      'INTC': 'Technology'
+      'INTC': 'Technology',
+      'CRM': 'Technology',
+      'ORCL': 'Technology',
+      'IBM': 'Technology',
+      'CSCO': 'Technology'
     };
     return sectors[symbol] || 'Technology';
   };
@@ -98,7 +140,11 @@ export const useFinancialData = () => {
       'NVDA': 'Semiconductors',
       'NFLX': 'Streaming Services',
       'AMD': 'Semiconductors',
-      'INTC': 'Semiconductors'
+      'INTC': 'Semiconductors',
+      'CRM': 'Cloud Software',
+      'ORCL': 'Database Software',
+      'IBM': 'Technology Services',
+      'CSCO': 'Networking Equipment'
     };
     return industries[symbol] || 'Technology Services';
   };

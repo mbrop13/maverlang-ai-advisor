@@ -8,7 +8,7 @@ import { ChatMessage } from './ChatMessage';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useGemini } from '../hooks/useGemini';
 import { useToast } from '@/hooks/use-toast';
-import { Send, AlertTriangle, Sparkles } from 'lucide-react';
+import { Send, AlertTriangle, Sparkles, RefreshCw } from 'lucide-react';
 
 interface ChatViewProps {
   appState: any;
@@ -41,16 +41,11 @@ const INITIAL_MESSAGE = {
 export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputMessage, setInputMessage] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { fetchFinancialData, extractSymbolsFromText } = useFinancialData();
   const { analyzeFinancialData, isGenerating } = useGemini();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (appState.currentConversation === null) {
-      setMessages([INITIAL_MESSAGE]);
-    }
-  }, [appState.currentConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,6 +54,19 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle new conversation
+  const startNewConversation = () => {
+    setMessages([INITIAL_MESSAGE]);
+    setConversationId(null);
+    updateAppState({
+      currentConversation: null
+    });
+    toast({
+      title: "Nueva conversación iniciada",
+      description: "Puedes comenzar a hacer nuevas consultas.",
+    });
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +84,15 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
+    
+    // Create conversation ID if it doesn't exist
+    if (!conversationId) {
+      const newConversationId = Date.now().toString();
+      setConversationId(newConversationId);
+      updateAppState({
+        currentConversation: newConversationId
+      });
+    }
     
     const newUserMessage = {
       id: Date.now().toString(),
@@ -164,13 +181,12 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
     
     data.forEach(item => {
       const changeIcon = item.change > 0 ? '📈' : '📉';
-      const changeColor = item.change > 0 ? 'text-green-600' : 'text-red-600';
       
       content += `### **${item.symbol} - ${item.name}**\n`;
       content += `💰 **Precio:** $${item.price?.toFixed(2)}\n`;
       content += `${changeIcon} **Cambio:** ${item.change > 0 ? '+' : ''}${item.change?.toFixed(2)} (${item.changesPercentage?.toFixed(2)}%)\n`;
-      content += `📊 **P/E:** ${item.pe || 'N/A'}\n`;
-      content += `💵 **EPS:** $${item.eps || 'N/A'}\n`;
+      content += `📊 **P/E:** ${item.pe?.toFixed(2) || 'N/A'}\n`;
+      content += `💵 **EPS:** $${item.eps?.toFixed(2) || 'N/A'}\n`;
       content += `🏢 **Cap. Mercado:** $${(item.marketCap / 1e9)?.toFixed(2)}B\n`;
       content += `🏭 **Sector:** ${item.sector || 'N/A'}\n`;
       content += `🔧 **Industria:** ${item.industry || 'N/A'}\n\n`;
@@ -183,6 +199,22 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-gray-50 to-white">
+      {/* Header with new conversation button */}
+      <div className="border-b border-gray-200 bg-white px-6 py-3">
+        <div className="max-w-4xl mx-auto flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-800">Chat con Maverlang-AI</h2>
+          <Button
+            onClick={startNewConversation}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Nueva Conversación
+          </Button>
+        </div>
+      </div>
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-6 space-y-6">
