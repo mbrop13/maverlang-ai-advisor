@@ -91,9 +91,7 @@ export const useFinancialData = () => {
     const industries: { [key: string]: string } = {
       'AAPL': 'Consumer Electronics',
       'MSFT': 'Software',
-      '
-
-GOOGL': 'Internet Services',
+      'GOOGL': 'Internet Services',
       'AMZN': 'E-commerce',
       'TSLA': 'Electric Vehicles',
       'META': 'Social Media',
