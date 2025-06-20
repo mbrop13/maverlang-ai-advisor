@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,8 +57,6 @@ export const Dashboard = ({ appState }: DashboardProps) => {
     { symbol: 'TSLA', name: 'Tesla', price: 248.42, change: 3.21, volume: '89.1M' },
     { symbol: 'NVDA', name: 'NVIDIA', price: 721.33, change: 4.56, volume: '52.7M' }
   ]);
-
-  const [is
 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
