@@ -215,6 +215,13 @@ export const TradingViewWidget = ({ symbols }: TradingViewWidgetProps) => {
       mainContainer.appendChild(bottomWidgetsContainer);
       containerRef.current?.appendChild(mainContainer);
     });
+
+    // Clean up function to prevent memory leaks
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
   }, [symbols]);
 
   if (!symbols.length) return null;
