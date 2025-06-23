@@ -9,7 +9,6 @@ export const useFinancialData = () => {
   const extractSymbolsFromText = async (text: string): Promise<string[]> => {
     const normalizedText = text.toUpperCase();
     
-    // Patrones mejorados para detectar símbolos
     const stockPattern = /\b[A-Z]{1,5}\b/g;
     const companyMentions = {
       'APPLE': 'AAPL',
@@ -32,14 +31,12 @@ export const useFinancialData = () => {
     
     const foundSymbols: Set<string> = new Set();
     
-    // Buscar menciones de empresas
     Object.entries(companyMentions).forEach(([company, symbol]) => {
       if (normalizedText.includes(company)) {
         foundSymbols.add(symbol);
       }
     });
     
-    // Buscar patrones de símbolos
     const matches = normalizedText.match(stockPattern) || [];
     const commonSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC', 'CRM', 'ORCL', 'IBM', 'CSCO'];
     
@@ -53,31 +50,102 @@ export const useFinancialData = () => {
   };
 
   const fetchFinancialData = async (symbols: string[]) => {
+    if (!symbols || symbols.length === 0) return [];
+    
     setIsLoading(true);
     
     try {
-      // Simular datos financieros para demo
-      const mockData = symbols.map(symbol => {
-        const basePrice = Math.random() * 500 + 50;
-        const change = (Math.random() - 0.5) * 20;
-        
-        return {
-          symbol,
-          name: getCompanyName(symbol),
-          price: basePrice,
-          change: change,
-          changesPercentage: (change / basePrice) * 100,
-          pe: Math.random() * 30 + 10,
-          eps: Math.random() * 10 + 1,
-          marketCap: Math.random() * 1000000000000 + 100000000000,
-          sector: getSector(symbol),
-          industry: getIndustry(symbol)
-        };
+      const apiKey = 'fCHTBdDUx8bqkZMrYJrqTInrUJN9KdkN';
+      const promises = symbols.map(async (symbol) => {
+        try {
+          // Obtener datos de la empresa
+          const profileResponse = await fetch(
+            `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`
+          );
+          
+          if (!profileResponse.ok) {
+            throw new Error(`HTTP error! status: ${profileResponse.status}`);
+          }
+          
+          const profileData = await profileResponse.json();
+          
+          if (!profileData || profileData.length === 0) {
+            throw new Error(`No data found for ${symbol}`);
+          }
+          
+          const profile = profileData[0];
+          
+          // Obtener métricas financieras adicionales
+          const metricsResponse = await fetch(
+            `https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?apikey=${apiKey}`
+          );
+          
+          let metrics = null;
+          if (metricsResponse.ok) {
+            const metricsData = await metricsResponse.json();
+            metrics = metricsData[0];
+          }
+          
+          return {
+            symbol: profile.symbol,
+            name: profile.companyName,
+            price: profile.price,
+            change: profile.changes,
+            changesPercentage: profile.changesPercentage,
+            pe: metrics?.peRatio || profile.pe || null,
+            eps: metrics?.revenuePerShare || null,
+            marketCap: profile.mktCap,
+            sector: profile.sector,
+            industry: profile.industry,
+            website: profile.website,
+            description: profile.description,
+            ceo: profile.ceo,
+            employees: profile.fullTimeEmployees,
+            exchange: profile.exchange,
+            currency: profile.currency,
+            country: profile.country,
+            beta: profile.beta,
+            volAvg: profile.volAvg,
+            range: profile.range,
+            dcfDiff: profile.dcfDiff,
+            dcf: profile.dcf
+          };
+        } catch (error) {
+          console.error(`Error fetching data for ${symbol}:`, error);
+          // Retornar datos mock si falla la API
+          return {
+            symbol,
+            name: `${symbol} Inc.`,
+            price: Math.random() * 500 + 50,
+            change: (Math.random() - 0.5) * 20,
+            changesPercentage: (Math.random() - 0.5) * 10,
+            pe: Math.random() * 30 + 10,
+            eps: Math.random() * 10 + 1,
+            marketCap: Math.random() * 1000000000000 + 100000000000,
+            sector: 'Technology',
+            industry: 'Software',
+            error: `API error for ${symbol}`,
+            website: null,
+            description: `Mock data for ${symbol} due to API error`,
+            ceo: 'N/A',
+            employees: null,
+            exchange: 'NASDAQ',
+            currency: 'USD',
+            country: 'US',
+            beta: null,
+            volAvg: null,
+            range: null,
+            dcfDiff: null,
+            dcf: null
+          };
+        }
       });
       
-      return mockData;
+      const results = await Promise.all(promises);
+      return results.filter(result => result !== null);
+      
     } catch (error) {
-      console.error('Error fetching financial data:', error);
+      console.error('Error in fetchFinancialData:', error);
       toast({
         title: "Error",
         description: "No se pudieron obtener los datos financieros",
@@ -87,66 +155,6 @@ export const useFinancialData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getCompanyName = (symbol: string): string => {
-    const names: { [key: string]: string } = {
-      'AAPL': 'Apple Inc.',
-      'MSFT': 'Microsoft Corporation',
-      'GOOGL': 'Alphabet Inc.',
-      'AMZN': 'Amazon.com Inc.',
-      'TSLA': 'Tesla Inc.',
-      'META': 'Meta Platforms Inc.',
-      'NVDA': 'NVIDIA Corporation',
-      'NFLX': 'Netflix Inc.',
-      'AMD': 'Advanced Micro Devices',
-      'INTC': 'Intel Corporation',
-      'CRM': 'Salesforce Inc.',
-      'ORCL': 'Oracle Corporation',
-      'IBM': 'International Business Machines',
-      'CSCO': 'Cisco Systems Inc.'
-    };
-    return names[symbol] || `${symbol} Corporation`;
-  };
-
-  const getSector = (symbol: string): string => {
-    const sectors: { [key: string]: string } = {
-      'AAPL': 'Technology',
-      'MSFT': 'Technology',
-      'GOOGL': 'Technology',
-      'AMZN': 'Consumer Discretionary',
-      'TSLA': 'Automotive',
-      'META': 'Technology',
-      'NVDA': 'Technology',
-      'NFLX': 'Entertainment',
-      'AMD': 'Technology',
-      'INTC': 'Technology',
-      'CRM': 'Technology',
-      'ORCL': 'Technology',
-      'IBM': 'Technology',
-      'CSCO': 'Technology'
-    };
-    return sectors[symbol] || 'Technology';
-  };
-
-  const getIndustry = (symbol: string): string => {
-    const industries: { [key: string]: string } = {
-      'AAPL': 'Consumer Electronics',
-      'MSFT': 'Software',
-      'GOOGL': 'Internet Services',
-      'AMZN': 'E-commerce',
-      'TSLA': 'Electric Vehicles',
-      'META': 'Social Media',
-      'NVDA': 'Semiconductors',
-      'NFLX': 'Streaming Services',
-      'AMD': 'Semiconductors',
-      'INTC': 'Semiconductors',
-      'CRM': 'Cloud Software',
-      'ORCL': 'Database Software',
-      'IBM': 'Technology Services',
-      'CSCO': 'Networking Equipment'
-    };
-    return industries[symbol] || 'Technology Services';
   };
 
   return {

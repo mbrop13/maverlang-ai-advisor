@@ -1,5 +1,8 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, BarChart3, PieChart, Activity } from 'lucide-react';
 
 interface TradingViewWidgetProps {
   symbols: string[];
@@ -7,165 +10,136 @@ interface TradingViewWidgetProps {
 
 export const TradingViewWidget = ({ symbols }: TradingViewWidgetProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [loadedWidgets, setLoadedWidgets] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!symbols.length || !containerRef.current) return;
 
-    // Clear existing widgets
+    // Limpiar contenedor
     containerRef.current.innerHTML = '';
+    setLoadedWidgets(new Set());
 
     symbols.forEach((symbol, index) => {
-      // Create unique container ID for each symbol
-      const containerId = `tradingview-widget-${symbol}-${index}`;
+      if (!containerRef.current) return;
+
+      const symbolContainer = document.createElement('div');
+      symbolContainer.className = 'mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200';
       
-      // Create main container for all widgets
-      const mainContainer = document.createElement('div');
-      mainContainer.className = 'mb-8 p-4 bg-gray-50 rounded-lg';
-      
-      // Symbol title
+      // Título del símbolo
       const titleDiv = document.createElement('div');
-      titleDiv.innerHTML = `<h4 class="text-lg font-bold text-gray-800 mb-4">📊 Análisis Completo de ${symbol}</h4>`;
-      mainContainer.appendChild(titleDiv);
+      titleDiv.innerHTML = `
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800">Análisis Completo de ${symbol}</h3>
+          <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">${symbol}</span>
+        </div>
+      `;
+      symbolContainer.appendChild(titleDiv);
 
-      // Container for widgets grid
-      const widgetsContainer = document.createElement('div');
-      widgetsContainer.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
+      // Grid de widgets
+      const widgetsGrid = document.createElement('div');
+      widgetsGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
 
-      // Widget 1: Symbol Info
-      const symbolInfoContainer = document.createElement('div');
-      symbolInfoContainer.className = 'tradingview-widget-container';
-      symbolInfoContainer.id = `${containerId}-info`;
+      // Widget 1: Gráfico principal
+      const chartContainer = document.createElement('div');
+      chartContainer.className = 'lg:col-span-2';
+      const chartWidget = document.createElement('div');
+      chartWidget.className = 'tradingview-widget-container';
+      chartWidget.style.height = '500px';
+      chartWidget.id = `chart-${symbol}-${Date.now()}-${index}`;
       
-      const symbolInfoScript = document.createElement('script');
-      symbolInfoScript.type = 'text/javascript';
-      symbolInfoScript.async = true;
-      symbolInfoScript.innerHTML = JSON.stringify({
-        symbol: `NASDAQ:${symbol}`,
-        width: "100%",
-        locale: 'es',
-        colorTheme: 'light',
-        isTransparent: false
-      });
-      
-      // Add TradingView script source
       setTimeout(() => {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js';
-        scriptElement.async = true;
-        scriptElement.onload = () => {
-          // Widget loaded successfully
-          console.log(`Symbol info widget loaded for ${symbol}`);
-        };
-        symbolInfoContainer.appendChild(scriptElement);
-        symbolInfoContainer.appendChild(symbolInfoScript);
-      }, 100 * index);
-
-      widgetsContainer.appendChild(symbolInfoContainer);
-
-      // Widget 2: Mini Chart
-      const miniChartContainer = document.createElement('div');
-      miniChartContainer.className = 'tradingview-widget-container';
-      miniChartContainer.id = `${containerId}-chart`;
-      miniChartContainer.style.height = '400px';
-      
-      const miniChartScript = document.createElement('script');
-      miniChartScript.type = 'text/javascript';
-      miniChartScript.async = true;
-      miniChartScript.innerHTML = JSON.stringify({
-        symbol: `NASDAQ:${symbol}`,
-        width: "100%",
-        height: "400",
-        locale: 'es',
-        dateRange: '12M',
-        colorTheme: 'light',
-        isTransparent: false,
-        autosize: true,
-        largeChartUrl: ''
-      });
-
-      setTimeout(() => {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
-        scriptElement.async = true;
-        scriptElement.onload = () => {
-          console.log(`Mini chart widget loaded for ${symbol}`);
-        };
-        miniChartContainer.appendChild(scriptElement);
-        miniChartContainer.appendChild(miniChartScript);
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+          autosize: true,
+          symbol: `NASDAQ:${symbol}`,
+          interval: 'D',
+          timezone: 'Etc/UTC',
+          theme: 'light',
+          style: '1',
+          locale: 'es',
+          enable_publishing: false,
+          backgroundColor: 'rgba(255, 255, 255, 1)',
+          gridColor: 'rgba(240, 243, 250, 1)',
+          hide_top_toolbar: false,
+          hide_legend: false,
+          save_image: false,
+          container_id: chartWidget.id
+        });
+        chartWidget.appendChild(script);
       }, 200 * index);
 
-      widgetsContainer.appendChild(miniChartContainer);
+      chartContainer.appendChild(chartWidget);
+      widgetsGrid.appendChild(chartContainer);
 
-      // Widget 3: Technical Analysis
-      const technicalContainer = document.createElement('div');
-      technicalContainer.className = 'tradingview-widget-container';
-      technicalContainer.id = `${containerId}-technical`;
+      // Widget 2: Información del símbolo
+      const infoContainer = document.createElement('div');
+      infoContainer.className = 'bg-white rounded-lg p-4 shadow-sm';
+      const infoWidget = document.createElement('div');
+      infoWidget.className = 'tradingview-widget-container';
+      infoWidget.id = `info-${symbol}-${Date.now()}-${index}`;
       
-      const technicalScript = document.createElement('script');
-      technicalScript.type = 'text/javascript';
-      technicalScript.async = true;
-      technicalScript.innerHTML = JSON.stringify({
-        interval: '1D',
-        width: "100%",
-        isTransparent: false,
-        height: 400,
-        symbol: `NASDAQ:${symbol}`,
-        showIntervalTabs: true,
-        locale: 'es',
-        colorTheme: 'light'
-      });
-
       setTimeout(() => {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
-        scriptElement.async = true;
-        scriptElement.onload = () => {
-          console.log(`Technical analysis widget loaded for ${symbol}`);
-        };
-        technicalContainer.appendChild(scriptElement);
-        technicalContainer.appendChild(technicalScript);
-      }, 300 * index);
-
-      widgetsContainer.appendChild(technicalContainer);
-
-      // Widget 4: Company Profile
-      const profileContainer = document.createElement('div');
-      profileContainer.className = 'tradingview-widget-container';
-      profileContainer.id = `${containerId}-profile`;
-      
-      const profileScript = document.createElement('script');
-      profileScript.type = 'text/javascript';
-      profileScript.async = true;
-      profileScript.innerHTML = JSON.stringify({
-        symbol: `NASDAQ:${symbol}`,
-        width: "100%",
-        height: 400,
-        locale: 'es',
-        colorTheme: 'light',
-        isTransparent: false
-      });
-
-      setTimeout(() => {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js';
-        scriptElement.async = true;
-        scriptElement.onload = () => {
-          console.log(`Profile widget loaded for ${symbol}`);
-        };
-        profileContainer.appendChild(scriptElement);
-        profileContainer.appendChild(profileScript);
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js';
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+          symbol: `NASDAQ:${symbol}`,
+          width: '100%',
+          locale: 'es',
+          colorTheme: 'light',
+          isTransparent: false
+        });
+        infoWidget.appendChild(script);
       }, 400 * index);
 
-      widgetsContainer.appendChild(profileContainer);
+      infoContainer.appendChild(infoWidget);
+      widgetsGrid.appendChild(infoContainer);
 
-      mainContainer.appendChild(widgetsContainer);
+      // Widget 3: Análisis técnico
+      const technicalContainer = document.createElement('div');
+      technicalContainer.className = 'bg-white rounded-lg p-4 shadow-sm';
+      const technicalWidget = document.createElement('div');
+      technicalWidget.className = 'tradingview-widget-container';
+      technicalWidget.style.height = '350px';
+      technicalWidget.id = `technical-${symbol}-${Date.now()}-${index}`;
+      
+      setTimeout(() => {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+          interval: '1D',
+          width: '100%',
+          isTransparent: false,
+          height: 350,
+          symbol: `NASDAQ:${symbol}`,
+          showIntervalTabs: true,
+          locale: 'es',
+          colorTheme: 'light'
+        });
+        technicalWidget.appendChild(script);
+      }, 600 * index);
+
+      technicalContainer.appendChild(technicalWidget);
+      widgetsGrid.appendChild(technicalContainer);
+
+      symbolContainer.appendChild(widgetsGrid);
       
       if (containerRef.current) {
-        containerRef.current.appendChild(mainContainer);
+        containerRef.current.appendChild(symbolContainer);
       }
     });
 
-    // Clean up function
     return () => {
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
@@ -176,8 +150,21 @@ export const TradingViewWidget = ({ symbols }: TradingViewWidgetProps) => {
   if (!symbols.length) return null;
 
   return (
-    <div className="my-6">
-      <div ref={containerRef} className="space-y-6"></div>
+    <div className="my-8">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Activity className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-800">Análisis de Mercado en Tiempo Real</h2>
+        </div>
+        <div className="flex gap-2">
+          {symbols.map((symbol) => (
+            <Badge key={symbol} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {symbol}
+            </Badge>
+          ))}
+        </div>
+      </div>
+      <div ref={containerRef} className="space-y-8"></div>
     </div>
   );
 };

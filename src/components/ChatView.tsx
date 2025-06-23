@@ -175,20 +175,34 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
   const formatFinancialData = (data: any[]) => {
     if (!data.length) return "No se encontraron datos financieros para los símbolos solicitados.";
     
-    let content = "## 📊 **Datos Financieros Obtenidos**\n\n";
+    let content = "## 📊 **Datos Financieros en Tiempo Real**\n\n";
     
     data.forEach(item => {
       const changeIcon = item.change > 0 ? '📈' : '📉';
+      const changeColor = item.change > 0 ? 'text-green-600' : 'text-red-600';
       
       content += `### **${item.symbol} - ${item.name}**\n`;
-      content += `💰 **Precio:** $${item.price?.toFixed(2)}\n`;
-      content += `${changeIcon} **Cambio:** ${item.change > 0 ? '+' : ''}${item.change?.toFixed(2)} (${item.changesPercentage?.toFixed(2)}%)\n`;
-      content += `📊 **P/E:** ${item.pe?.toFixed(2) || 'N/A'}\n`;
-      content += `💵 **EPS:** $${item.eps?.toFixed(2) || 'N/A'}\n`;
-      content += `🏢 **Cap. Mercado:** $${(item.marketCap / 1e9)?.toFixed(2)}B\n`;
-      content += `🏭 **Sector:** ${item.sector || 'N/A'}\n`;
-      content += `🔧 **Industria:** ${item.industry || 'N/A'}\n\n`;
+      content += `💰 **Precio Actual:** $${item.price?.toFixed(2) || 'N/A'}\n`;
+      content += `${changeIcon} **Cambio Diario:** ${item.change > 0 ? '+' : ''}${item.change?.toFixed(2) || 'N/A'} (${item.changesPercentage?.toFixed(2) || 'N/A'}%)\n`;
+      
+      if (item.pe) content += `📊 **Ratio P/E:** ${item.pe.toFixed(2)}\n`;
+      if (item.eps) content += `💵 **EPS:** $${item.eps.toFixed(2)}\n`;
+      if (item.marketCap) content += `🏢 **Capitalización:** $${(item.marketCap / 1e9).toFixed(2)}B\n`;
+      if (item.sector) content += `🏭 **Sector:** ${item.sector}\n`;
+      if (item.industry) content += `🔧 **Industria:** ${item.industry}\n`;
+      if (item.exchange) content += `🏦 **Bolsa:** ${item.exchange}\n`;
+      if (item.beta) content += `📉 **Beta:** ${item.beta.toFixed(2)}\n`;
+      if (item.employees) content += `👥 **Empleados:** ${item.employees.toLocaleString()}\n`;
+      if (item.ceo) content += `👨‍💼 **CEO:** ${item.ceo}\n`;
+      
+      if (item.error) {
+        content += `⚠️ **Nota:** ${item.error}\n`;
+      }
+      
+      content += `\n`;
     });
+    
+    content += `*Datos obtenidos en tiempo real de Financial Modeling Prep API*\n`;
     
     return content;
   };
