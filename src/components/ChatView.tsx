@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,16 +101,20 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
     setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      console.log('Extrayendo símbolos con IA para:', userMessage);
+      // PASO 1: Extraer símbolos con IA
+      console.log('🔍 PASO 1: Extrayendo símbolos para:', userMessage);
       const symbols = await extractSymbolsWithAI(userMessage);
-      console.log('Símbolos extraídos por IA:', symbols);
+      console.log('✅ Símbolos extraídos:', symbols);
       
       let financialData: any[] = [];
+      
+      // PASO 2: Obtener datos financieros si hay símbolos
       if (symbols.length > 0) {
-        console.log('Obteniendo datos financieros para:', symbols);
+        console.log('📊 PASO 2: Obteniendo datos financieros para:', symbols);
         financialData = await fetchFinancialData(symbols);
-        console.log('Datos financieros obtenidos:', financialData);
+        console.log('✅ Datos obtenidos:', financialData);
         
+        // Mostrar datos financieros al usuario
         const financialDataMessage = {
           id: Date.now().toString() + '_data',
           content: formatFinancialData(financialData),
@@ -122,9 +125,10 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
         };
         
         setMessages(prev => [...prev, financialDataMessage]);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
+      // PASO 3: Mostrar indicador de procesamiento
       const analysisThinkingMessage = {
         id: 'analysis_thinking',
         content: '',
@@ -135,8 +139,12 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
       
       setMessages(prev => [...prev, analysisThinkingMessage]);
       
+      // PASO 4: Generar análisis con IA (pasando los datos financieros)
+      console.log('🤖 PASO 3: Generando análisis con IA...');
       const aiAnalysis = await analyzeFinancialData(userMessage, financialData);
+      console.log('✅ Análisis generado');
       
+      // PASO 5: Mostrar análisis final
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== 'analysis_thinking');
         return [...filtered, {
@@ -152,7 +160,7 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
       });
       
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('❌ Error en el proceso:', error);
       
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== 'analysis_thinking');
@@ -179,7 +187,6 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
     
     data.forEach(item => {
       const changeIcon = item.change > 0 ? '📈' : '📉';
-      const changeColor = item.change > 0 ? 'text-green-600' : 'text-red-600';
       
       content += `### **${item.symbol} - ${item.name}**\n`;
       content += `💰 **Precio Actual:** $${item.price?.toFixed(2) || 'N/A'}\n`;
@@ -190,19 +197,12 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
       if (item.marketCap) content += `🏢 **Capitalización:** $${(item.marketCap / 1e9).toFixed(2)}B\n`;
       if (item.sector) content += `🏭 **Sector:** ${item.sector}\n`;
       if (item.industry) content += `🔧 **Industria:** ${item.industry}\n`;
-      if (item.exchange) content += `🏦 **Bolsa:** ${item.exchange}\n`;
-      if (item.beta) content += `📉 **Beta:** ${item.beta.toFixed(2)}\n`;
-      if (item.employees) content += `👥 **Empleados:** ${item.employees.toLocaleString()}\n`;
-      if (item.ceo) content += `👨‍💼 **CEO:** ${item.ceo}\n`;
-      
-      if (item.error) {
-        content += `⚠️ **Nota:** ${item.error}\n`;
-      }
+      if (item.beta) content += `📈 **Beta:** ${item.beta.toFixed(2)}\n`;
       
       content += `\n`;
     });
     
-    content += `*Datos obtenidos en tiempo real de Financial Modeling Prep API*\n`;
+    content += `*Datos obtenidos en tiempo real*\n`;
     
     return content;
   };

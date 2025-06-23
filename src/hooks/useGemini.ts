@@ -1,226 +1,228 @@
 
-import { useState } from 'react'; // 1
-import { useToast } from '@/hooks/use-toast'; // 2
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-interface GeminiResponse { // 3
-  candidates: Array<{ // 4
-    content: { // 5
-      parts: Array<{ // 6
-        text: string; // 7
-      }>; // 8
-    }; // 9
-  }>; // 10
-} // 11
+interface GeminiResponse {
+  candidates: Array<{
+    content: {
+      parts: Array<{
+        text: string;
+      }>;
+    };
+  }>;
+}
 
-export const useGemini = () => { // 12
-  const [isGenerating, setIsGenerating] = useState(false); // 13
-  const { toast } = useToast(); // 14
+export const useGemini = () => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
   
-  const apiKey = "AIzaSyBTjEoZrwh9LiDFKghBNMBzk_9eaYVJW3o"; // 15
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`; // 16
+  const apiKey = "AIzaSyBTjEoZrwh9LiDFKghBNMBzk_9eaYVJW3o";
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-  const extractSymbolsWithAI = async (userMessage: string): Promise<string[]> => { // 17
-    try { // 18
-      const requestBody = { // 19
-        contents: [ // 20
-          { // 21
-            parts: [ // 22
-              { // 23
-                text: `Analiza el siguiente mensaje del usuario y extrae ÚNICAMENTE los símbolos bursátiles (tickers) válidos de empresas que cotizan en bolsa. // 24
+  const extractSymbolsWithAI = async (userMessage: string): Promise<string[]> => {
+    try {
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Analiza este mensaje y extrae SOLO los símbolos bursátiles válidos de empresas que cotizan en bolsa.
 
-REGLAS ESTRICTAS: // 25
-1. Solo devuelve símbolos de empresas reales que cotizan en bolsa (AAPL, MSFT, TSLA, GOOGL, AMZN, META, NVDA, etc.) // 26
-2. NO incluyas palabras comunes como "sobre", "de", "dame", "información", "análisis", "empresa", etc. // 27
-3. Si se menciona el nombre de una empresa conocida, devuelve su símbolo oficial: // 28
-   - Apple → AAPL // 29
-   - Microsoft → MSFT   // 30
-   - Tesla → TSLA // 31
-   - Google/Alphabet → GOOGL // 32
-   - Amazon → AMZN // 33
-   - Meta/Facebook → META // 34
-   - Nvidia → NVDA // 35
-   - Netflix → NFLX // 36
-4. Máximo 3 símbolos por respuesta // 37
-5. Si no encuentras símbolos válidos, devuelve una lista vacía // 38
-6. Responde SOLO con los símbolos separados por comas, sin explicaciones // 39
+REGLAS:
+1. Si mencionan "Apple" o "apple" → devuelve "AAPL"
+2. Si mencionan "Microsoft" → devuelve "MSFT"
+3. Si mencionan "Tesla" → devuelve "TSLA"
+4. Si mencionan "Google" o "Alphabet" → devuelve "GOOGL"
+5. Si mencionan "Amazon" → devuelve "AMZN"
+6. Si mencionan "Meta" o "Facebook" → devuelve "META"
+7. Si mencionan "Nvidia" → devuelve "NVDA"
+8. Si mencionan "Netflix" → devuelve "NFLX"
 
-Mensaje del usuario: "${userMessage}" // 40
+IMPORTANTE: Responde SOLO con el símbolo (ej: "AAPL") o una lista separada por comas si hay varios (ej: "AAPL,MSFT"). NO agregues explicaciones.
 
-Ejemplos: // 41
-- "información sobre Apple" → "AAPL" // 42
-- "análisis de Tesla y Microsoft" → "TSLA,MSFT" // 43
-- "dame datos sobre la empresa" → "" // 44
-- "cómo está NIO hoy" → "NIO"` // 45
-              } // 46
-            ] // 47
-          } // 48
-        ], // 49
-        generationConfig: { // 50
-          temperature: 0.1, // 51
-          topK: 1, // 52
-          topP: 0.1, // 53
-          maxOutputTokens: 50, // 54
-        } // 55
-      }; // 56
+Mensaje del usuario: "${userMessage}"`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          topP: 0.1,
+          maxOutputTokens: 50,
+        }
+      };
 
-      const response = await fetch(apiUrl, { // 57
-        method: 'POST', // 58
-        headers: { // 59
-          'Content-Type': 'application/json', // 60
-        }, // 61
-        body: JSON.stringify(requestBody) // 62
-      }); // 63
-
-      if (!response.ok) { // 64
-        throw new Error(`Error de API: ${response.status}`); // 65
-      } // 66
-
-      const data: GeminiResponse = await response.json(); // 67
+      console.log('Enviando request a Gemini para extraer símbolos:', userMessage);
       
-      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) { // 68
-        const extractedText = data.candidates[0].content.parts[0].text.trim(); // 69
-        
-        // Si la respuesta está vacía o es muy corta, no hay símbolos válidos // 70
-        if (!extractedText || extractedText.length < 2) { // 71
-          return []; // 72
-        } // 73
-        
-        // Filtrar y validar símbolos // 74
-        const symbols = extractedText // 75
-          .split(',') // 76
-          .map(s => s.trim().toUpperCase()) // 77
-          .filter(s => { // 78
-            // Solo símbolos de 1-5 caracteres que no sean palabras comunes // 79
-            const commonWords = ['SOBRE', 'DE', 'DAME', 'INFO', 'ANALISIS', 'EMPRESA', 'DATOS', 'HOY']; // 80
-            return s.length >= 1 && s.length <= 5 && !commonWords.includes(s) && /^[A-Z]+$/.test(s); // 81
-          }) // 82
-          .slice(0, 3); // Máximo 3 símbolos // 83
-        
-        console.log('Símbolos extraídos por IA:', symbols); // 84
-        return symbols; // 85
-      } // 86
-      
-      return []; // 87
-    } catch (error) { // 88
-      console.error('Error extrayendo símbolos con IA:', error); // 89
-      return []; // 90
-    } // 91
-  }; // 92
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-  const analyzeFinancialData = async (userMessage: string, financialData: any[]) => { // 93
-    setIsGenerating(true); // 94
+      if (!response.ok) {
+        throw new Error(`Error de API: ${response.status}`);
+      }
+
+      const data: GeminiResponse = await response.json();
+      console.log('Respuesta de Gemini:', data);
+      
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        const extractedText = data.candidates[0].content.parts[0].text.trim().toUpperCase();
+        console.log('Texto extraído:', extractedText);
+        
+        if (!extractedText || extractedText.length < 2) {
+          return [];
+        }
+        
+        // Dividir por comas y limpiar
+        const symbols = extractedText
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s.length >= 1 && s.length <= 5 && /^[A-Z]+$/.test(s))
+          .slice(0, 3);
+        
+        console.log('Símbolos finales extraídos:', symbols);
+        return symbols;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error extrayendo símbolos con IA:', error);
+      
+      // Fallback: detección manual básica
+      const normalizedText = userMessage.toLowerCase();
+      const companyMap: { [key: string]: string } = {
+        'apple': 'AAPL',
+        'microsoft': 'MSFT',
+        'tesla': 'TSLA',
+        'google': 'GOOGL',
+        'alphabet': 'GOOGL',
+        'amazon': 'AMZN',
+        'meta': 'META',
+        'facebook': 'META',
+        'nvidia': 'NVDA',
+        'netflix': 'NFLX'
+      };
+      
+      const foundSymbols: string[] = [];
+      Object.entries(companyMap).forEach(([company, symbol]) => {
+        if (normalizedText.includes(company) && !foundSymbols.includes(symbol)) {
+          foundSymbols.push(symbol);
+        }
+      });
+      
+      console.log('Símbolos detectados con fallback:', foundSymbols);
+      return foundSymbols.slice(0, 3);
+    }
+  };
+
+  const analyzeFinancialData = async (userMessage: string, financialData: any[]) => {
+    setIsGenerating(true);
     
-    try { // 95
-      let context = `Eres Maverlang-AI, un asesor financiero experto y profesional especializado en análisis de mercados. // 96
+    try {
+      let context = `Eres Maverlang-AI, un asesor financiero experto especializado en análisis de mercados.
 
-CONSULTA DEL USUARIO: "${userMessage}" // 97
+CONSULTA DEL USUARIO: "${userMessage}"
 
-`; // 98
+`;
 
-      if (financialData.length > 0) { // 99
-        context += `DATOS FINANCIEROS DISPONIBLES: // 100
+      if (financialData.length > 0) {
+        context += `DATOS FINANCIEROS DISPONIBLES:
 ${financialData.map(data => `
-**${data.symbol} - ${data.name}:** // 101
-- Precio actual: $${data.price?.toFixed(2)} // 102
-- Cambio diario: ${data.change > 0 ? '+' : ''}${data.change?.toFixed(2)} (${data.changesPercentage?.toFixed(2)}%) // 103
-- Ratio P/E: ${data.pe || 'N/A'} // 104
-- Ganancias por acción (EPS): $${data.eps || 'N/A'} // 105
-- Capitalización de mercado: $${(data.marketCap / 1e9)?.toFixed(2)}B // 106
-- Sector: ${data.sector || 'N/A'} // 107
-- Industria: ${data.industry || 'N/A'} // 108
-`).join('')} // 109
+**${data.symbol} - ${data.name}:**
+- Precio actual: $${data.price?.toFixed(2)}
+- Cambio diario: ${data.change > 0 ? '+' : ''}${data.change?.toFixed(2)} (${data.changesPercentage?.toFixed(2)}%)
+- Ratio P/E: ${data.pe || 'N/A'}
+- EPS: $${data.eps || 'N/A'}
+- Capitalización: $${(data.marketCap / 1e9)?.toFixed(2)}B
+- Sector: ${data.sector || 'N/A'}
+- Industria: ${data.industry || 'N/A'}
+- Beta: ${data.beta || 'N/A'}
+- Empleados: ${data.employees || 'N/A'}
+- CEO: ${data.ceo || 'N/A'}
+`).join('')}
 
-INSTRUCCIONES DE ANÁLISIS: // 110
-Proporciona un análisis financiero completo y profesional que incluya: // 111
+INSTRUCCIONES:
+Proporciona un análisis financiero completo que incluya:
 
-1. **Resumen Ejecutivo**: Visión general de las empresas analizadas // 112
-2. **Análisis Técnico**: Interpretación de precios, tendencias y momentum // 113
-3. **Análisis Fundamental**: Evaluación de métricas como P/E, EPS, capitalización // 114
-4. **Evaluación Sectorial**: Contexto de la industria y sector // 115
-5. **Comparativa**: Si hay múltiples acciones, compararlas detalladamente // 116
-6. **Recomendaciones**: Sugerencias de inversión basadas en perfil conservador a moderado // 117
-7. **Gestión de Riesgo**: Factores de riesgo importantes a considerar // 118
-8. **Perspectiva Temporal**: Análisis a corto, medio y largo plazo // 119
+1. **Resumen Ejecutivo**: Visión general de la empresa/empresas
+2. **Análisis de Precios**: Interpretación del precio actual y cambios
+3. **Métricas Fundamentales**: Análisis de P/E, EPS, capitalización
+4. **Posición Competitiva**: Contexto del sector e industria
+5. **Recomendaciones**: Sugerencias basadas en los datos
+6. **Factores de Riesgo**: Riesgos importantes a considerar
 
-Usa un lenguaje profesional pero accesible. Incluye emojis apropiados para hacer el análisis más visual y fácil de leer.`; // 120
-      } else { // 121
-        context += `No se encontraron datos financieros específicos para la consulta. // 122
+Usa un lenguaje profesional pero accesible. Incluye emojis para hacer el análisis más visual.`;
+      } else {
+        context += `No se encontraron datos financieros específicos para la consulta.
 
-Por favor: // 123
-1. Proporciona información educativa general sobre el tema consultado // 124
-2. Explica conceptos financieros relevantes // 125
-3. Sugiere cómo el usuario podría obtener la información que busca // 126
-4. Ofrece consejos generales de inversión responsable // 127
+Por favor proporciona información educativa general sobre el tema consultado y explica conceptos financieros relevantes.`;
+      }
 
-Mantén un tono profesional y educativo.`; // 128
-      } // 129
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: context
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2000,
+        }
+      };
 
-      const requestBody = { // 130
-        contents: [ // 131
-          { // 132
-            parts: [ // 133
-              { // 134
-                text: context // 135
-              } // 136
-            ] // 137
-          } // 138
-        ], // 139
-        generationConfig: { // 140
-          temperature: 0.7, // 141
-          topK: 40, // 142
-          topP: 0.95, // 143
-          maxOutputTokens: 3000, // 144
-        } // 145
-      }; // 146
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-      const response = await fetch(apiUrl, { // 147
-        method: 'POST', // 148
-        headers: { // 149
-          'Content-Type': 'application/json', // 150
-        }, // 151
-        body: JSON.stringify(requestBody) // 152
-      }); // 153
+      if (!response.ok) {
+        throw new Error(`Error de API: ${response.status}`);
+      }
 
-      if (!response.ok) { // 154
-        throw new Error(`Error de API: ${response.status}`); // 155
-      } // 156
-
-      const data: GeminiResponse = await response.json(); // 157
+      const data: GeminiResponse = await response.json();
       
-      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) { // 158
-        return data.candidates[0].content.parts[0].text; // 159
-      } else { // 160
-        throw new Error('Respuesta inválida de la API'); // 161
-      } // 162
-    } catch (error) { // 163
-      console.error('Error al generar análisis con Gemini:', error); // 164
-      toast({ // 165
-        title: "Error de IA", // 166
-        description: "No se pudo generar el análisis. Los datos financieros están disponibles.", // 167
-        variant: "destructive" // 168
-      }); // 169
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('Respuesta inválida de la API');
+      }
+    } catch (error) {
+      console.error('Error al generar análisis con Gemini:', error);
+      toast({
+        title: "Error de IA",
+        description: "No se pudo generar el análisis completo",
+        variant: "destructive"
+      });
       
-      return `**🤖 Análisis de Maverlang-AI** // 170
+      return `**🤖 Análisis de Maverlang-AI**
 
-Hubo un problema técnico con el análisis de IA, pero los datos financieros se obtuvieron correctamente. // 171
+Hubo un problema técnico con el análisis de IA, pero los datos financieros están disponibles arriba.
 
-**📊 Datos disponibles para análisis:** // 172
-${financialData.map(item => { // 173
-        const changeIcon = item.change > 0 ? '📈' : '📉'; // 174
-        return `• **${item.symbol} (${item.name})**: $${item.price?.toFixed(2)} ${changeIcon} ${item.changesPercentage?.toFixed(2)}%`; // 175
-      }).join('\n')} // 176
+**💡 Recomendación:** Inténtalo de nuevo en unos momentos.
 
-**💡 Recomendación:** Por favor, inténtalo de nuevo en unos momentos para obtener el análisis completo con IA. // 177
+**⚠️ Nota:** Consulta siempre con un asesor financiero profesional antes de tomar decisiones de inversión.`;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-**⚠️ Nota importante:** Siempre consulta con un asesor financiero profesional antes de tomar decisiones de inversión importantes.`; // 178
-    } finally { // 179
-      setIsGenerating(false); // 180
-    } // 181
-  }; // 182
-
-  return { // 183
-    analyzeFinancialData, // 184
-    extractSymbolsWithAI, // 185
-    isGenerating // 186
-  }; // 187
-}; // 188
+  return {
+    analyzeFinancialData,
+    extractSymbolsWithAI,
+    isGenerating
+  };
+};
