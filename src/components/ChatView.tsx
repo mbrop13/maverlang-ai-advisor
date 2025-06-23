@@ -38,59 +38,75 @@ const INITIAL_MESSAGE = {
 };
 
 export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
+  // 1. Estado para almacenar todos los mensajes del chat
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  // 2. Estado para el mensaje que está escribiendo el usuario
   const [inputMessage, setInputMessage] = useState('');
+  // 3. ID único para identificar la conversación actual
   const [conversationId, setConversationId] = useState<string | null>(null);
+  // 4. Referencia para hacer scroll automático al final
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 5. Hook personalizado para obtener datos financieros
   const { fetchFinancialData } = useFinancialData();
+  // 6. Hook personalizado para análisis con IA
   const { analyzeFinancialData, extractSymbolsWithAI, isGenerating } = useGemini();
+  // 7. Hook para mostrar notificaciones
   const { toast } = useToast();
 
+  // 8. Función para hacer scroll automático al final del chat
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 9. Efecto que se ejecuta cada vez que cambian los mensajes
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(); // 10. Hacer scroll al final cuando hay nuevos mensajes
   }, [messages]);
 
+  // 11. Función para iniciar una nueva conversación
   const startNewConversation = () => {
-    setMessages([INITIAL_MESSAGE]);
-    setConversationId(null);
-    updateAppState({
+    setMessages([INITIAL_MESSAGE]); // 12. Resetear mensajes al mensaje inicial
+    setConversationId(null);        // 13. Limpiar ID de conversación
+    updateAppState({                // 14. Actualizar estado global
       currentConversation: null
     });
-    toast({
+    toast({                        // 15. Mostrar notificación de éxito
       title: "Nueva conversación iniciada",
       description: "Puedes comenzar a hacer nuevas consultas.",
     });
   };
 
+  // 16. Función principal que maneja el envío de mensajes
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // 17. Prevenir recarga de página
     
+    // 18. Validar que hay mensaje y que la IA no está generando
     if (!inputMessage.trim() || isGenerating) return;
     
+    // 19. Verificar límite diario de uso
     if (appState.dailyUsage >= appState.maxDailyUsage) {
       toast({
         title: "Límite alcanzado",
         description: "Has alcanzado el límite diario de consultas.",
         variant: "destructive"
       });
-      return;
+      return; // 20. Salir si se alcanzó el límite
     }
 
+    // 21. Guardar mensaje del usuario y limpiar input
     const userMessage = inputMessage.trim();
     setInputMessage('');
     
+    // 22. Crear nueva conversación si no existe
     if (!conversationId) {
-      const newConversationId = Date.now().toString();
-      setConversationId(newConversationId);
-      updateAppState({
+      const newConversationId = Date.now().toString(); // 23. ID único basado en timestamp
+      setConversationId(newConversationId);           // 24. Guardar ID
+      updateAppState({                                // 25. Actualizar estado global
         currentConversation: newConversationId
       });
     }
     
+    // 26. Crear objeto del mensaje del usuario
     const newUserMessage = {
       id: Date.now().toString(),
       content: userMessage,
@@ -98,70 +114,90 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
       timestamp: new Date()
     };
     
+    // 27. Agregar mensaje del usuario al chat
     setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      // PASO 1: Extraer símbolos con IA
+      // === PASO 1: EXTRACCIÓN DE SÍMBOLOS ===
+      // 28. Log para debug del paso 1
       console.log('🔍 PASO 1: Extrayendo símbolos para:', userMessage);
+      // 29. Usar IA para extraer símbolos bursátiles del mensaje
       const symbols = await extractSymbolsWithAI(userMessage);
+      // 30. Log para debug - símbolos encontrados
       console.log('✅ Símbolos extraídos:', symbols);
       
+      // 31. Inicializar array para datos financieros
       let financialData: any[] = [];
       
-      // PASO 2: Obtener datos financieros si hay símbolos
+      // === PASO 2: OBTENCIÓN DE DATOS FINANCIEROS ===
+      // 32. Solo buscar datos si se encontraron símbolos
       if (symbols.length > 0) {
+        // 33. Log para debug del paso 2
         console.log('📊 PASO 2: Obteniendo datos financieros para:', symbols);
+        // 34. Obtener datos financieros reales de la API
         financialData = await fetchFinancialData(symbols);
+        // 35. Log para debug - datos obtenidos
         console.log('✅ Datos obtenidos:', financialData);
         
-        // Mostrar datos financieros al usuario
+        // 36. Crear mensaje con los datos financieros para mostrar al usuario
         const financialDataMessage = {
           id: Date.now().toString() + '_data',
-          content: formatFinancialData(financialData),
+          content: formatFinancialData(financialData), // 37. Formatear datos para display
           isUser: false,
           timestamp: new Date(),
-          financialData,
-          symbols
+          financialData,  // 38. Guardar datos raw para TradingView
+          symbols        // 39. Guardar símbolos para TradingView
         };
         
+        // 40. Mostrar datos financieros al usuario
         setMessages(prev => [...prev, financialDataMessage]);
+        // 41. Pausa breve para mejor UX
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
-      // PASO 3: Mostrar indicador de procesamiento
+      // === PASO 3: MOSTRAR INDICADOR DE PROCESAMIENTO ===
+      // 42. Crear mensaje temporal de "pensando"
       const analysisThinkingMessage = {
         id: 'analysis_thinking',
         content: '',
         isUser: false,
         timestamp: new Date(),
-        isThinking: true
+        isThinking: true // 43. Flag para mostrar animación de carga
       };
       
+      // 44. Mostrar indicador de que la IA está trabajando
       setMessages(prev => [...prev, analysisThinkingMessage]);
       
-      // PASO 4: Generar análisis con IA (pasando los datos financieros)
+      // === PASO 4: GENERACIÓN DE ANÁLISIS CON IA ===
+      // 45. Log para debug del paso 3
       console.log('🤖 PASO 3: Generando análisis con IA...');
+      // 46. Generar análisis pasando mensaje original Y datos financieros
       const aiAnalysis = await analyzeFinancialData(userMessage, financialData);
+      // 47. Log para debug - análisis completado
       console.log('✅ Análisis generado');
       
-      // PASO 5: Mostrar análisis final
+      // === PASO 5: MOSTRAR ANÁLISIS FINAL ===
+      // 48. Remover mensaje de "pensando" y agregar análisis final
       setMessages(prev => {
-        const filtered = prev.filter(msg => msg.id !== 'analysis_thinking');
+        const filtered = prev.filter(msg => msg.id !== 'analysis_thinking'); // 49. Quitar mensaje temporal
         return [...filtered, {
           id: Date.now().toString() + '_analysis',
-          content: aiAnalysis,
+          content: aiAnalysis, // 50. Contenido del análisis generado
           isUser: false,
           timestamp: new Date()
         }];
       });
       
+      // 51. Incrementar contador de uso diario
       updateAppState({
         dailyUsage: appState.dailyUsage + 1
       });
       
     } catch (error) {
+      // 52. Log de error en el proceso completo
       console.error('❌ Error en el proceso:', error);
       
+      // 53. Remover mensaje de "pensando" y mostrar error
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== 'analysis_thinking');
         return [...filtered, {
@@ -172,6 +208,7 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
         }];
       });
       
+      // 54. Mostrar notificación de error al usuario
       toast({
         title: "Error",
         description: "Hubo un problema procesando tu consulta.",
@@ -180,18 +217,27 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
     }
   };
 
+  // 55. Función para formatear datos financieros como texto markdown
   const formatFinancialData = (data: any[]) => {
+    // 56. Retornar mensaje si no hay datos
     if (!data.length) return "No se encontraron datos financieros para los símbolos solicitados.";
     
+    // 57. Iniciar contenido con encabezado
     let content = "## 📊 **Datos Financieros en Tiempo Real**\n\n";
     
+    // 58. Iterar cada empresa y formatear sus datos
     data.forEach(item => {
+      // 59. Seleccionar emoji según si subió o bajó
       const changeIcon = item.change > 0 ? '📈' : '📉';
       
+      // 60. Agregar título de la empresa
       content += `### **${item.symbol} - ${item.name}**\n`;
+      // 61. Agregar precio actual
       content += `💰 **Precio Actual:** $${item.price?.toFixed(2) || 'N/A'}\n`;
+      // 62. Agregar cambio diario con signo
       content += `${changeIcon} **Cambio Diario:** ${item.change > 0 ? '+' : ''}${item.change?.toFixed(2) || 'N/A'} (${item.changesPercentage?.toFixed(2) || 'N/A'}%)\n`;
       
+      // 63-69. Agregar métricas adicionales si están disponibles
       if (item.pe) content += `📊 **Ratio P/E:** ${item.pe.toFixed(2)}\n`;
       if (item.eps) content += `💵 **EPS:** $${item.eps.toFixed(2)}\n`;
       if (item.marketCap) content += `🏢 **Capitalización:** $${(item.marketCap / 1e9).toFixed(2)}B\n`;
@@ -199,14 +245,16 @@ export const ChatView = ({ appState, updateAppState }: ChatViewProps) => {
       if (item.industry) content += `🔧 **Industria:** ${item.industry}\n`;
       if (item.beta) content += `📈 **Beta:** ${item.beta.toFixed(2)}\n`;
       
-      content += `\n`;
+      content += `\n`; // 70. Salto de línea entre empresas
     });
     
+    // 71. Agregar nota sobre la fuente de datos
     content += `*Datos obtenidos en tiempo real*\n`;
     
-    return content;
+    return content; // 72. Retornar contenido formateado
   };
 
+  // 73. Calcular si está cerca del límite diario
   const isNearLimit = appState.dailyUsage >= appState.maxDailyUsage * 0.8;
 
   return (
