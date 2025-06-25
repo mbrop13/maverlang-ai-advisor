@@ -1,5 +1,19 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+
+// Interface for Finnhub profile data
+interface FinnhubProfile {
+  name?: string;
+  marketCapitalization?: number;
+  finnhubIndustry?: string;
+  gind?: string;
+  weburl?: string;
+  employeeTotal?: number;
+  exchange?: string;
+  currency?: string;
+  country?: string;
+}
 
 export const useFinancialData = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +102,7 @@ export const useFinancialData = () => {
         `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
       );
       
-      let profileData = {};
+      let profileData: FinnhubProfile = {};
       if (profileResponse.ok) {
         profileData = await profileResponse.json();
       }
