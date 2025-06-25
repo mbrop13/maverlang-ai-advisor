@@ -1,14 +1,18 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   TrendingDown, 
   Globe,
   Building,
-  Zap
+  Zap,
+  RefreshCw
 } from 'lucide-react';
+import { useFinancialData } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 interface MarketOverviewProps {
   appState: any;
@@ -16,6 +20,13 @@ interface MarketOverviewProps {
 }
 
 export const MarketOverview = ({ appState }: MarketOverviewProps) => {
+  const { fetchFinancialData, isLoading } = useFinancialData();
+  const { toast } = useToast();
+
+  const [marketData, setMarketData] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Datos estáticos de índices principales
   const indices = [
     { name: 'S&P 500', symbol: '^GSPC', value: 4782.20, change: 57.18, changePercent: 1.21 },
     { name: 'Dow Jones', symbol: '^DJI', value: 37428.92, change: -125.81, changePercent: -0.34 },
@@ -31,24 +42,69 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
     { name: 'Consumo', change: 0.76, icon: TrendingUp, companies: ['AMZN', 'TSLA', 'DIS'] }
   ];
 
-  const topGainers = [
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 721.33, change: 32.45, changePercent: 4.71 },
-    { symbol: 'AMD', name: 'Advanced Micro Devices', price: 142.67, change: 6.23, changePercent: 4.56 },
-    { symbol: 'TSLA', name: 'Tesla Inc', price: 248.42, change: 7.89, changePercent: 3.28 },
-    { symbol: 'AAPL', name: 'Apple Inc', price: 193.58, change: 4.62, changePercent: 2.45 }
-  ];
+  // Cargar datos reales del mercado
+  const loadMarketData = async () => {
+    try {
+      const topGainerSymbols = ['NVDA', 'AMD', 'TSLA', 'AAPL', 'MSFT'];
+      const topLoserSymbols = ['META', 'NFLX', 'AMZN', 'GOOGL'];
+      
+      const allSymbols = [...new Set([...topGainerSymbols, ...topLoserSymbols])];
+      const data = await fetchFinancialData(allSymbols);
+      
+      setMarketData(data);
+      setLastUpdated(new Date());
+      
+      toast({
+        title: "Mercados actualizados",
+        description: "Datos en tiempo real cargados correctamente",
+      });
+    } catch (error) {
+      console.error('Error cargando datos del mercado:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos del mercado",
+        variant: "destructive"
+      });
+    }
+  };
 
-  const topLosers = [
-    { symbol: 'META', name: 'Meta Platforms', price: 487.32, change: -12.45, changePercent: -2.49 },
-    { symbol: 'NFLX', name: 'Netflix Inc', price: 612.78, change: -8.92, changePercent: -1.43 },
-    { symbol: 'AMZN', name: 'Amazon.com Inc', price: 151.23, change: -2.11, changePercent: -1.37 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc', price: 142.56, change: -1.89, changePercent: -1.31 }
-  ];
+  useEffect(() => {
+    loadMarketData();
+  }, []);
+
+  // Separar ganadores y perdedores basado en datos reales
+  const topGainers = marketData
+    .filter(stock => stock.changesPercentage > 0)
+    .sort((a, b) => b.changesPercentage - a.changesPercentage)
+    .slice(0, 4);
+
+  const topLosers = marketData
+    .filter(stock => stock.changesPercentage < 0)
+    .sort((a, b) => a.changesPercentage - b.changesPercentage)
+    .slice(0, 4);
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-full">
       <div className="max-w-7xl mx-auto">
         
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Mercados en Vivo</h1>
+            <p className="text-gray-600">
+              Última actualización: {lastUpdated.toLocaleTimeString()}
+            </p>
+          </div>
+          <Button
+            onClick={loadMarketData}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+        </div>
+
         {/* Major Indices */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {indices.map((index) => {
@@ -119,7 +175,7 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
               Principales Ganadores
             </h3>
             <div className="space-y-3">
-              {topGainers.map((stock) => (
+              {topGainers.length > 0 ? topGainers.map((stock) => (
                 <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
@@ -132,10 +188,12 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-green-600">+{stock.change.toFixed(2)}</p>
-                    <p className="text-sm text-green-600">+{stock.changePercent.toFixed(2)}%</p>
+                    <p className="text-sm text-green-600">+{stock.changesPercentage.toFixed(2)}%</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-center py-4">Cargando ganadores...</p>
+              )}
             </div>
           </Card>
 
@@ -145,7 +203,7 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
               Principales Perdedores
             </h3>
             <div className="space-y-3">
-              {topLosers.map((stock) => (
+              {topLosers.length > 0 ? topLosers.map((stock) => (
                 <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center">
@@ -158,10 +216,12 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-red-600">{stock.change.toFixed(2)}</p>
-                    <p className="text-sm text-red-600">{stock.changePercent.toFixed(2)}%</p>
+                    <p className="text-sm text-red-600">{stock.changesPercentage.toFixed(2)}%</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-center py-4">Cargando perdedores...</p>
+              )}
             </div>
           </Card>
         </div>

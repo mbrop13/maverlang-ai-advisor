@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,71 +9,98 @@ import {
   TrendingDown, 
   Plus,
   Eye,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
+import { useFinancialData } from '@/hooks/useFinancialData';
+import { useToast } from '@/hooks/use-toast';
 
 interface PortfolioProps {
   appState: any;
   updateAppState: (updates: any) => void;
 }
 
-export const Portfolio = ({ appState }: PortfolioProps) => {
-  const portfolioValue = 125430.50;
-  const dailyChange = 2847.33;
-  const dailyChangePercent = 2.32;
+interface Holding {
+  symbol: string;
+  name: string;
+  shares: number;
+  avgPrice: number;
+  currentPrice: number;
+  value: number;
+  allocation: number;
+  change: number;
+}
 
-  const holdings = [
-    { 
-      symbol: 'AAPL', 
-      name: 'Apple Inc.', 
-      shares: 150, 
-      avgPrice: 175.20, 
-      currentPrice: 193.58, 
-      value: 29037, 
-      allocation: 23.1,
-      change: 10.48
-    },
-    { 
-      symbol: 'MSFT', 
-      name: 'Microsoft', 
-      shares: 75, 
-      avgPrice: 365.40, 
-      currentPrice: 378.85, 
-      value: 28413.75, 
-      allocation: 22.7,
-      change: 3.68
-    },
-    { 
-      symbol: 'GOOGL', 
-      name: 'Alphabet', 
-      shares: 120, 
-      avgPrice: 138.90, 
-      currentPrice: 142.56, 
-      value: 17107.2, 
-      allocation: 13.6,
-      change: 2.63
-    },
-    { 
-      symbol: 'TSLA', 
-      name: 'Tesla', 
-      shares: 60, 
-      avgPrice: 220.30, 
-      currentPrice: 248.42, 
-      value: 14905.2, 
-      allocation: 11.9,
-      change: 12.75
-    },
-    { 
-      symbol: 'NVDA', 
-      name: 'NVIDIA', 
-      shares: 25, 
-      avgPrice: 680.50, 
-      currentPrice: 721.33, 
-      value: 18033.25, 
-      allocation: 14.4,
-      change: 6.0
+export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
+  const { fetchFinancialData, isLoading } = useFinancialData();
+  const { toast } = useToast();
+  
+  const [holdings, setHoldings] = useState<Holding[]>([
+    { symbol: 'AAPL', name: 'Apple Inc.', shares: 150, avgPrice: 175.20, currentPrice: 0, value: 0, allocation: 0, change: 0 },
+    { symbol: 'MSFT', name: 'Microsoft', shares: 75, avgPrice: 365.40, currentPrice: 0, value: 0, allocation: 0, change: 0 },
+    { symbol: 'GOOGL', name: 'Alphabet', shares: 120, avgPrice: 138.90, currentPrice: 0, value: 0, allocation: 0, change: 0 },
+    { symbol: 'TSLA', name: 'Tesla', shares: 60, avgPrice: 220.30, currentPrice: 0, value: 0, allocation: 0, change: 0 },
+    { symbol: 'NVDA', name: 'NVIDIA', shares: 25, avgPrice: 680.50, currentPrice: 0, value: 0, allocation: 0, change: 0 }
+  ]);
+
+  const [portfolioStats, setPortfolioStats] = useState({
+    totalValue: 0,
+    dailyChange: 0,
+    dailyChangePercent: 0
+  });
+
+  const updatePortfolioData = async () => {
+    const symbols = holdings.map(h => h.symbol);
+    const marketData = await fetchFinancialData(symbols);
+    
+    if (marketData.length > 0) {
+      const updatedHoldings = holdings.map(holding => {
+        const marketStock = marketData.find(stock => stock.symbol === holding.symbol);
+        if (marketStock) {
+          const currentPrice = marketStock.price;
+          const value = holding.shares * currentPrice;
+          const change = ((currentPrice - holding.avgPrice) / holding.avgPrice) * 100;
+          
+          return {
+            ...holding,
+            currentPrice,
+            value,
+            change,
+            name: marketStock.name
+          };
+        }
+        return holding;
+      });
+
+      // Calcular valor total y asignaciones
+      const totalValue = updatedHoldings.reduce((sum, h) => sum + h.value, 0);
+      const totalCost = updatedHoldings.reduce((sum, h) => sum + (h.shares * h.avgPrice), 0);
+      const dailyChange = totalValue - totalCost;
+      const dailyChangePercent = (dailyChange / totalCost) * 100;
+
+      const holdingsWithAllocation = updatedHoldings.map(holding => ({
+        ...holding,
+        allocation: parseFloat(((holding.value / totalValue) * 100).toFixed(1))
+      }));
+
+      setHoldings(holdingsWithAllocation);
+      setPortfolioStats({
+        totalValue,
+        dailyChange,
+        dailyChangePercent
+      });
+
+      toast({
+        title: "Portafolio actualizado",
+        description: "Datos actualizados con precios en tiempo real",
+      });
     }
-  ];
+  };
+
+  useEffect(() => {
+    updatePortfolioData();
+  }, []);
 
   const sectorAllocation = [
     { sector: 'Tecnología', percentage: 71.4, color: 'bg-blue-500' },
@@ -81,6 +108,14 @@ export const Portfolio = ({ appState }: PortfolioProps) => {
     { sector: 'Semiconductores', percentage: 14.4, color: 'bg-green-500' },
     { sector: 'Efectivo', percentage: 2.3, color: 'bg-gray-500' }
   ];
+
+  const removeHolding = (symbol: string) => {
+    setHoldings(prev => prev.filter(h => h.symbol !== symbol));
+    toast({
+      title: "Posición eliminada",
+      description: `${symbol} ha sido removido del portafolio`,
+    });
+  };
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-full">
@@ -91,22 +126,31 @@ export const Portfolio = ({ appState }: PortfolioProps) => {
           <Card className="col-span-2 p-6 bg-white shadow-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Valor Total del Portafolio</h2>
-              <Button variant="outline" size="sm">
-                <Eye className="w-4 h-4 mr-2" />
-                Ver Detalle
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={updatePortfolioData}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? 'Actualizando...' : 'Actualizar'}
               </Button>
             </div>
             <div className="space-y-2">
               <p className="text-3xl font-bold text-gray-900">
-                ${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                ${portfolioStats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </p>
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                <span className="text-lg font-semibold text-green-600">
-                  +${dailyChange.toLocaleString('en-US', { minimumFractionDigits: 2 })} 
-                  ({dailyChangePercent}%)
+                {portfolioStats.dailyChange >= 0 ? (
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                )}
+                <span className={`text-lg font-semibold ${portfolioStats.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {portfolioStats.dailyChange >= 0 ? '+' : ''}${portfolioStats.dailyChange.toLocaleString('en-US', { minimumFractionDigits: 2 })} 
+                  ({portfolioStats.dailyChangePercent.toFixed(2)}%)
                 </span>
-                <span className="text-sm text-gray-500">hoy</span>
+                <span className="text-sm text-gray-500">ganancia/pérdida total</span>
               </div>
             </div>
           </Card>
@@ -158,12 +202,13 @@ export const Portfolio = ({ appState }: PortfolioProps) => {
                   <th className="text-right py-3 px-2 font-semibold text-gray-700">Valor Total</th>
                   <th className="text-right py-3 px-2 font-semibold text-gray-700">Ganancia/Pérdida</th>
                   <th className="text-right py-3 px-2 font-semibold text-gray-700">Asignación</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-700">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {holdings.map((holding) => {
                   const totalGainLoss = (holding.currentPrice - holding.avgPrice) * holding.shares;
-                  const gainLossPercent = ((holding.currentPrice - holding.avgPrice) / holding.avgPrice) * 100;
+                  const gainLossPercent = holding.change;
                   const isGain = totalGainLoss > 0;
                   
                   return (
@@ -181,7 +226,9 @@ export const Portfolio = ({ appState }: PortfolioProps) => {
                       </td>
                       <td className="py-4 px-2 text-gray-700">{holding.shares}</td>
                       <td className="py-4 px-2 text-right text-gray-700">${holding.avgPrice.toFixed(2)}</td>
-                      <td className="py-4 px-2 text-right font-semibold text-gray-900">${holding.currentPrice}</td>
+                      <td className="py-4 px-2 text-right font-semibold text-gray-900">
+                        ${holding.currentPrice > 0 ? holding.currentPrice.toFixed(2) : 'Cargando...'}
+                      </td>
                       <td className="py-4 px-2 text-right font-semibold text-gray-900">
                         ${holding.value.toLocaleString('en-US')}
                       </td>
@@ -195,6 +242,16 @@ export const Portfolio = ({ appState }: PortfolioProps) => {
                       </td>
                       <td className="py-4 px-2 text-right">
                         <Badge variant="outline">{holding.allocation}%</Badge>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeHolding(holding.symbol)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   );
