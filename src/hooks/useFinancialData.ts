@@ -1,10 +1,12 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export const useFinancialData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // API Key de Finnhub
+  const FINNHUB_API_KEY = 'd1dp8a1r01qpp0b38ld0d1dp8a1r01qpp0b38ldg';
 
   // 1. Función para extraer símbolos bursátiles del texto del usuario
   const extractSymbolsFromText = async (text: string): Promise<string[]> => {
@@ -59,56 +61,76 @@ export const useFinancialData = () => {
     return Array.from(foundSymbols).slice(0, 5);
   };
 
-  // 10. Función para obtener datos reales de IEX Cloud (API gratuita y confiable)
+  // 10. Función para obtener datos reales de Finnhub (API gratuita y confiable)
   const fetchRealStockData = async (symbol: string) => {
     try {
-      // 11. Usar IEX Cloud API que es gratuita y confiable
-      const response = await fetch(
-        `https://cloud.iexapis.com/stable/stock/${symbol}/quote?token=demo`
+      // 11. Usar Finnhub API que es gratuita y confiable
+      console.log(`📡 Obteniendo datos reales de Finnhub para ${symbol}`);
+      
+      // Obtener quote (precio actual)
+      const quoteResponse = await fetch(
+        `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
       );
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!quoteResponse.ok) {
+        throw new Error(`HTTP error! status: ${quoteResponse.status}`);
       }
       
-      const data = await response.json();
+      const quoteData = await quoteResponse.json();
       
-      // 12. Verificar que hay datos válidos
-      if (!data.latestPrice) {
+      // Verificar que hay datos válidos
+      if (!quoteData.c || quoteData.c === 0) {
         throw new Error(`No data found for ${symbol}`);
       }
       
-      // 13. Retornar datos estructurados
+      // Obtener información del perfil de la empresa
+      const profileResponse = await fetch(
+        `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+      );
+      
+      let profileData = {};
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+      }
+      
+      // Calcular cambio y porcentaje
+      const currentPrice = quoteData.c;
+      const previousClose = quoteData.pc;
+      const change = currentPrice - previousClose;
+      const changePercent = (change / previousClose) * 100;
+      
+      console.log(`✅ Datos reales obtenidos para ${symbol}: $${currentPrice}`);
+      
       return {
-        symbol: data.symbol,
-        name: data.companyName || `${symbol} Inc.`,
-        price: data.latestPrice,
-        change: data.change,
-        changesPercentage: data.changePercent * 100,
-        pe: data.peRatio,
+        symbol: symbol,
+        name: profileData.name || `${symbol} Inc.`,
+        price: Math.round(currentPrice * 100) / 100,
+        change: Math.round(change * 100) / 100,
+        changesPercentage: Math.round(changePercent * 100) / 100,
+        pe: null, // Finnhub no incluye P/E en quote básico
         eps: null,
-        marketCap: data.marketCap,
-        sector: data.sector || 'Technology',
-        industry: data.industry || 'Software',
-        website: null,
-        description: `Datos reales para ${symbol}`,
+        marketCap: profileData.marketCapitalization || null,
+        sector: profileData.finnhubIndustry || 'Technology',
+        industry: profileData.gind || 'Software',
+        website: profileData.weburl || null,
+        description: `Datos reales de Finnhub para ${profileData.name || symbol}`,
         ceo: null,
-        employees: null,
-        exchange: data.primaryExchange || 'NASDAQ',
-        currency: 'USD',
-        country: 'US',
+        employees: profileData.employeeTotal || null,
+        exchange: profileData.exchange || 'NASDAQ',
+        currency: profileData.currency || 'USD',
+        country: profileData.country || 'US',
         beta: null,
-        volAvg: data.avgTotalVolume,
-        range: `${data.week52Low} - ${data.week52High}`,
+        volAvg: null,
+        range: `${quoteData.l} - ${quoteData.h}`, // Low - High del día
         dcfDiff: null,
         dcf: null,
-        high: data.high,
-        low: data.low,
-        open: data.open,
-        volume: data.latestVolume
+        high: quoteData.h, // High del día
+        low: quoteData.l,  // Low del día
+        open: quoteData.o, // Open del día
+        volume: null
       };
     } catch (error) {
-      console.error(`Error fetching real data for ${symbol}:`, error);
+      console.error(`❌ Error obteniendo datos reales para ${symbol}:`, error);
       return null;
     }
   };
@@ -168,7 +190,7 @@ export const useFinancialData = () => {
       sector: info.sector,
       industry: info.industry,
       website: `https://${symbol.toLowerCase()}.com`,
-      description: `Datos simulados realistas para ${info.name}`,
+      description: `Datos simulados realistas para ${info.name} (Finnhub no disponible)`,
       ceo: 'CEO Name',
       employees: Math.floor(50000 + Math.random() * 150000),
       exchange: 'NASDAQ',
@@ -195,7 +217,7 @@ export const useFinancialData = () => {
     setIsLoading(true);
     
     try {
-      console.log('📊 Obteniendo datos financieros para:', symbols);
+      console.log('📊 Obteniendo datos financieros reales de Finnhub para:', symbols);
       
       // 23. Crear promesas para cada símbolo
       const promises = symbols.map(async (symbol) => {
@@ -203,7 +225,7 @@ export const useFinancialData = () => {
         const realData = await fetchRealStockData(symbol);
         
         if (realData) {
-          console.log(`✅ Datos reales obtenidos para ${symbol}`);
+          console.log(`✅ Datos reales de Finnhub para ${symbol}: $${realData.price}`);
           return realData;
         } else {
           console.log(`🔄 Usando datos simulados para ${symbol}`);
