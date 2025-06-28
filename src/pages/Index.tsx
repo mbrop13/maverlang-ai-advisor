@@ -7,10 +7,11 @@ import { MarketOverview } from '../components/MarketOverview';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const Index = () => {
-  const [activeView, setActiveView] = useState('chat');
+  const [activeView, setActiveView] = useState('dashboard');
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [appState, setAppState] = useState({
     currentConversation: null,
@@ -35,39 +36,44 @@ const Index = () => {
       case 'market':
         return <MarketOverview appState={appState} updateAppState={updateAppState} />;
       case 'chat':
-      default:
         return <ChatView appState={appState} updateAppState={updateAppState} />;
+      default:
+        return <Dashboard appState={appState} updateAppState={updateAppState} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="flex h-screen">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
+      <div className="flex h-full">
         {/* Sidebar with conditional rendering */}
         {sidebarVisible && (
-          <Sidebar 
-            activeView={activeView} 
-            setActiveView={setActiveView}
-            appState={appState}
-          />
+          <div className="flex-shrink-0">
+            <Sidebar 
+              activeView={activeView} 
+              setActiveView={setActiveView}
+              appState={appState}
+            />
+          </div>
         )}
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header with sidebar toggle */}
-          <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+          <div className="flex-shrink-0 flex items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarVisible(!sidebarVisible)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover:bg-gray-100"
               >
                 {sidebarVisible ? (
                   <PanelLeftClose className="w-4 h-4" />
                 ) : (
                   <PanelLeftOpen className="w-4 h-4" />
                 )}
-                {sidebarVisible ? 'Ocultar Sidebar' : 'Mostrar Sidebar'}
+                <span className="hidden sm:inline">
+                  {sidebarVisible ? 'Ocultar Sidebar' : 'Mostrar Sidebar'}
+                </span>
               </Button>
             </div>
             <Header 
@@ -76,9 +82,14 @@ const Index = () => {
             />
           </div>
           
-          <main className="flex-1 overflow-hidden">
-            {renderActiveView()}
-          </main>
+          {/* Main content with scroll */}
+          <div className="flex-1 min-h-0">
+            <ScrollArea className="h-full w-full">
+              <div className="min-h-full">
+                {renderActiveView()}
+              </div>
+            </ScrollArea>
+          </div>
         </div>
       </div>
     </div>

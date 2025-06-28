@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -159,21 +158,21 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   const marketSummary = calculateMarketSummary();
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900">Dashboard Financiero</h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mt-1">
               Última actualización: {lastUpdated.toLocaleTimeString()}
             </p>
           </div>
           <Button
             onClick={loadMarketData}
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Actualizando...' : 'Actualizar'}
@@ -181,33 +180,33 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {marketIndices.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card 
                 key={stat.name} 
-                className="p-6 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                className="p-4 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-105"
                 onClick={() => openChart(stat.symbol, stat.name)}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                    <p className="text-2xl font-bold text-gray-900">${stat.value}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 truncate">{stat.name}</p>
+                    <p className="text-xl font-bold text-gray-900 truncate">${stat.value}</p>
                     <div className="flex items-center mt-1">
-                      <Icon className={`w-4 h-4 mr-1 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
-                      <span className={`text-sm font-semibold ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                      <Icon className={`w-4 h-4 mr-1 flex-shrink-0 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
+                      <span className={`text-sm font-semibold truncate ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                         {stat.change} ({stat.changePercent.toFixed(2)}%)
                       </span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-full ${stat.isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <Icon className={`w-6 h-6 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
+                  <div className={`p-3 rounded-full flex-shrink-0 ${stat.isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
+                    <Icon className={`w-5 h-5 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs text-gray-500">
-                  <MousePointer className="w-3 h-3 mr-1" />
-                  Haz clic para ver gráfico
+                  <MousePointer className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">Haz clic para ver gráfico</span>
                 </div>
               </Card>
             );
@@ -215,32 +214,32 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Summary Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold text-green-800">{marketSummary.gainers}</p>
+              <TrendingUp className="w-6 h-6 text-green-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-green-800">{marketSummary.gainers}</p>
                 <p className="text-sm text-green-600">Acciones en Alza</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200">
+          <Card className="p-4 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200">
             <div className="flex items-center gap-3">
-              <TrendingDown className="w-8 h-8 text-red-600" />
-              <div>
-                <p className="text-2xl font-bold text-red-800">{marketSummary.losers}</p>
+              <TrendingDown className="w-6 h-6 text-red-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-red-800">{marketSummary.losers}</p>
                 <p className="text-sm text-red-600">Acciones en Baja</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold text-blue-800">
+              <BarChart3 className="w-6 h-6 text-blue-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-blue-800">
                   {marketSummary.avgChange > 0 ? '+' : ''}{marketSummary.avgChange.toFixed(2)}%
                 </p>
                 <p className="text-sm text-blue-600">Cambio Promedio</p>
@@ -252,31 +251,31 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         {/* Real Market Data and Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 bg-white shadow-md">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0" />
                 <h3 className="text-lg font-semibold text-gray-900">Acciones en Tiempo Real</h3>
               </div>
               <AddStockModal onAddStock={addCustomStock} isLoading={isLoading} />
             </div>
             
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {marketData.map((stock) => (
                 <div 
                   key={stock.symbol} 
                   className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer hover:scale-102 group"
                   onClick={() => openChart(stock.symbol, stock.name)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{stock.symbol.charAt(0)}</span>
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{stock.symbol}</p>
-                      <p className="text-sm text-gray-500">{stock.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 truncate">{stock.symbol}</p>
+                      <p className="text-sm text-gray-500 truncate">{stock.name}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">${stock.price?.toFixed(2) || '0.00'}</p>
                       <div className="flex items-center gap-1">
@@ -362,7 +361,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {marketIndices.slice(0, 4).map((index) => (
                   <div key={index.name} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600">{index.name}</p>
+                    <p className="text-xs text-gray-600 truncate">{index.name}</p>
                     <p className="font-semibold text-gray-900">${index.value}</p>
                     <p className={`text-xs ${index.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                       {index.change}
@@ -375,7 +374,9 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Analysis with AI */}
-        <MarketAnalysis marketIndices={marketIndices} marketData={marketData} />
+        <div className="mb-8">
+          <MarketAnalysis marketIndices={marketIndices} marketData={marketData} />
+        </div>
       </div>
 
       {/* Trading Chart Modal */}

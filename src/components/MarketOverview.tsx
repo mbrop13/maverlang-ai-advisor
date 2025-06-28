@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,21 +83,21 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
     .slice(0, 4);
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-full">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900">Mercados en Vivo</h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mt-1">
               Última actualización: {lastUpdated.toLocaleTimeString()}
             </p>
           </div>
           <Button
             onClick={loadMarketData}
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Actualizando...' : 'Actualizar'}
@@ -106,24 +105,24 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
         </div>
 
         {/* Major Indices */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {indices.map((index) => {
             const isPositive = index.change > 0;
             return (
-              <Card key={index.symbol} className="p-6 bg-white shadow-md hover:shadow-lg transition-shadow">
+              <Card key={index.symbol} className="p-4 bg-white shadow-md hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{index.name}</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm truncate flex-1">{index.name}</h3>
                   {isPositive ? (
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <TrendingUp className="w-4 h-4 text-green-600 flex-shrink-0" />
                   ) : (
-                    <TrendingDown className="w-5 h-5 text-red-600" />
+                    <TrendingDown className="w-4 h-4 text-red-600 flex-shrink-0" />
                   )}
                 </div>
-                <p className="text-2xl font-bold text-gray-900 mb-1">
+                <p className="text-xl font-bold text-gray-900 mb-1">
                   {index.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`font-semibold text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                     {isPositive ? '+' : ''}{index.change.toFixed(2)}
                   </span>
                   <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
@@ -141,20 +140,20 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
             <Building className="w-5 h-5 text-blue-600" />
             Rendimiento por Sectores
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {sectors.map((sector) => {
               const Icon = sector.icon;
               const isPositive = sector.change > 0;
               return (
                 <div key={sector.name} className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-2 mb-2">
-                    <Icon className={`w-4 h-4 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
-                    <span className="font-medium text-gray-900">{sector.name}</span>
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
+                    <span className="font-medium text-gray-900 text-sm truncate">{sector.name}</span>
                   </div>
                   <p className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                     {isPositive ? '+' : ''}{sector.change.toFixed(2)}%
                   </p>
-                  <div className="flex gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {sector.companies.map((company) => (
                       <Badge key={company} variant="outline" className="text-xs">
                         {company}
@@ -168,25 +167,25 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
         </Card>
 
         {/* Top Gainers and Losers */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 bg-white shadow-md">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-green-600" />
               Principales Ganadores
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {topGainers.length > 0 ? topGainers.map((stock) => (
                 <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{stock.symbol.charAt(0)}</span>
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{stock.symbol}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{stock.symbol}</p>
                       <p className="text-sm text-gray-600">${stock.price}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <p className="font-semibold text-green-600">+{stock.change.toFixed(2)}</p>
                     <p className="text-sm text-green-600">+{stock.changesPercentage.toFixed(2)}%</p>
                   </div>
@@ -202,19 +201,19 @@ export const MarketOverview = ({ appState }: MarketOverviewProps) => {
               <TrendingDown className="w-5 h-5 text-red-600" />
               Principales Perdedores
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {topLosers.length > 0 ? topLosers.map((stock) => (
                 <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-sm">{stock.symbol.charAt(0)}</span>
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{stock.symbol}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{stock.symbol}</p>
                       <p className="text-sm text-gray-600">${stock.price}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <p className="font-semibold text-red-600">{stock.change.toFixed(2)}</p>
                     <p className="text-sm text-red-600">{stock.changesPercentage.toFixed(2)}%</p>
                   </div>

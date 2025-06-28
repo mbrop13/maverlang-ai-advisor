@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -248,14 +247,14 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900">Mi Portafolio</h1>
-            <p className="text-gray-600">Gestiona tus inversiones y analiza tu rendimiento</p>
+            <p className="text-gray-600 mt-1">Gestiona tus inversiones y analiza tu rendimiento</p>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -272,11 +271,11 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
         </div>
         
         {/* Portfolio Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="col-span-2 p-6 bg-white shadow-md">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+          <Card className="lg:col-span-2 p-6 bg-white shadow-md">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Valor Total del Portafolio</h2>
             <div className="space-y-3">
-              <p className="text-4xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900">
                 ${portfolioStats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </p>
               <div className="flex items-center gap-2">
@@ -307,33 +306,16 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
                 <p className="text-2xl font-bold">{getDiversificationScore()}</p>
                 <p className="text-sm opacity-80">Nivel de Diversificación</p>
               </div>
-              {sectorAllocation.slice(0, 3).map((sector) => (
-                <div key={sector.sector} className="flex items-center justify-between">
-                  <span className="text-sm opacity-90">{sector.sector}</span>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${sector.color}`}></div>
-                    <span className="font-semibold">{sector.percentage.toFixed(1)}%</span>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {sectorAllocation.slice(0, 3).map((sector) => (
+                  <div key={sector.sector} className="flex items-center justify-between">
+                    <span className="text-sm opacity-90 truncate flex-1">{sector.sector}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className={`w-3 h-3 rounded-full ${sector.color}`}></div>
+                      <span className="font-semibold">{sector.percentage.toFixed(1)}%</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-green-600 to-emerald-700 text-white shadow-md">
-            <div className="flex items-center gap-3 mb-4">
-              <BarChart3 className="w-6 h-6" />
-              <h3 className="text-lg font-semibold">Rendimiento</h3>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <p className="text-2xl font-bold">
-                  {portfolioStats.totalGainLossPercent >= 0 ? '+' : ''}{portfolioStats.totalGainLossPercent.toFixed(2)}%
-                </p>
-                <p className="text-sm opacity-80">Rendimiento Total</p>
-              </div>
-              <div className="text-sm opacity-90">
-                <p>Mejor posición: {holdings.length > 0 ? holdings.reduce((max, h) => h.change > max.change ? h : max, holdings[0])?.symbol : 'N/A'}</p>
-                <p>Peor posición: {holdings.length > 0 ? holdings.reduce((min, h) => h.change < min.change ? h : min, holdings[0])?.symbol : 'N/A'}</p>
+                ))}
               </div>
             </div>
           </Card>
@@ -352,8 +334,8 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
                 {sectorAllocation.map((sector) => (
                   <div key={sector.sector} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">{sector.sector}</span>
-                      <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900 truncate flex-1">{sector.sector}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <div className={`w-4 h-4 rounded-full ${sector.color}`}></div>
                         <span className="font-bold text-gray-900">{sector.percentage.toFixed(1)}%</span>
                       </div>
@@ -396,7 +378,7 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
 
         {/* Holdings */}
         <Card className="p-6 bg-white shadow-md">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-gray-900">Mis Posiciones</h3>
@@ -405,76 +387,78 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
           
           {holdings.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Símbolo</th>
-                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Sector</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Acciones</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Precio Prom.</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Precio Actual</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Valor Total</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Ganancia/Pérdida</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Asignación</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-700">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {holdings.map((holding) => {
-                    const isGain = holding.totalGainLoss > 0;
-                    
-                    return (
-                      <tr key={holding.symbol} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 px-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                              <span className="text-white font-bold text-sm">{holding.symbol.charAt(0)}</span>
+              <div className="min-w-full max-h-96 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-white border-b border-gray-200">
+                    <tr>
+                      <th className="text-left py-3 px-2 font-semibold text-gray-700">Símbolo</th>
+                      <th className="text-left py-3 px-2 font-semibold text-gray-700">Sector</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Acciones</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Precio Prom.</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Precio Actual</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Valor Total</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Ganancia/Pérdida</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Asignación</th>
+                      <th className="text-right py-3 px-2 font-semibold text-gray-700">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {holdings.map((holding) => {
+                      const isGain = holding.totalGainLoss > 0;
+                      
+                      return (
+                        <tr key={holding.symbol} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-4 px-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-bold text-sm">{holding.symbol.charAt(0)}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-gray-900 truncate">{holding.symbol}</p>
+                                <p className="text-sm text-gray-500 truncate">{holding.name}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{holding.symbol}</p>
-                              <p className="text-sm text-gray-500">{holding.name}</p>
+                          </td>
+                          <td className="py-4 px-2">
+                            <Badge variant="outline" className="text-xs">
+                              {holding.sector}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-2 text-right text-gray-700 font-medium">{holding.shares}</td>
+                          <td className="py-4 px-2 text-right text-gray-700">${holding.avgPrice.toFixed(2)}</td>
+                          <td className="py-4 px-2 text-right font-semibold text-gray-900">
+                            ${holding.currentPrice > 0 ? holding.currentPrice.toFixed(2) : 'Cargando...'}
+                          </td>
+                          <td className="py-4 px-2 text-right font-semibold text-gray-900">
+                            ${holding.value.toLocaleString('en-US')}
+                          </td>
+                          <td className="py-4 px-2 text-right">
+                            <div className={`font-semibold ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                              {isGain ? '+' : ''}${holding.totalGainLoss.toFixed(2)}
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-2">
-                          <Badge variant="outline" className="text-xs">
-                            {holding.sector}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-2 text-right text-gray-700 font-medium">{holding.shares}</td>
-                        <td className="py-4 px-2 text-right text-gray-700">${holding.avgPrice.toFixed(2)}</td>
-                        <td className="py-4 px-2 text-right font-semibold text-gray-900">
-                          ${holding.currentPrice > 0 ? holding.currentPrice.toFixed(2) : 'Cargando...'}
-                        </td>
-                        <td className="py-4 px-2 text-right font-semibold text-gray-900">
-                          ${holding.value.toLocaleString('en-US')}
-                        </td>
-                        <td className="py-4 px-2 text-right">
-                          <div className={`font-semibold ${isGain ? 'text-green-600' : 'text-red-600'}`}>
-                            {isGain ? '+' : ''}${holding.totalGainLoss.toFixed(2)}
-                          </div>
-                          <div className={`text-sm ${isGain ? 'text-green-600' : 'text-red-600'}`}>
-                            ({isGain ? '+' : ''}{holding.change.toFixed(2)}%)
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 text-right">
-                          <Badge variant="outline">{holding.allocation}%</Badge>
-                        </td>
-                        <td className="py-4 px-2 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeHolding(holding.symbol)}
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                            <div className={`text-sm ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                              ({isGain ? '+' : ''}{holding.change.toFixed(2)}%)
+                            </div>
+                          </td>
+                          <td className="py-4 px-2 text-right">
+                            <Badge variant="outline">{holding.allocation}%</Badge>
+                          </td>
+                          <td className="py-4 px-2 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeHolding(holding.symbol)}
+                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
