@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; name: string } | null>(null);
   const [customStocks, setCustomStocks] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA']);
 
-  // Datos de índices principales con precios reales
+  // Datos de índices principales usando ETFs para obtener datos reales
   const [marketIndices, setMarketIndices] = useState([
     {
       name: 'S&P 500',
@@ -63,8 +64,8 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
       icon: TrendingDown
     },
     {
-      name: 'VIX',
-      symbol: 'VIX',
+      name: 'Volatilidad (VIX)',
+      symbol: 'VXX',
       value: '0.00',
       change: '0.00',
       changePercent: 0,
@@ -77,13 +78,13 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
     try {
       console.log('🔄 Cargando datos del mercado...');
       
-      // Cargar datos de índices
+      // Cargar datos de índices usando símbolos correctos
       const indexSymbols = ['SPY', 'QQQ', 'DIA', 'VXX'];
       const indexData = await fetchFinancialData(indexSymbols);
       
       // Actualizar índices con datos reales
       if (indexData.length > 0) {
-        setMarketIndices(prev => prev.map((index, i) => {
+        setMarketIndices(prev => prev.map((index) => {
           const realData = indexData.find(d => d.symbol === index.symbol);
           if (realData) {
             const isPositive = realData.change > 0;
@@ -158,14 +159,14 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   const marketSummary = calculateMarketSummary();
 
   return (
-    <div className="w-full">
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="w-full h-full overflow-auto">
+      <div className="p-4 space-y-6 max-w-7xl mx-auto">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Financiero</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Financiero</h1>
+            <p className="text-gray-600 mt-1 text-sm">
               Última actualización: {lastUpdated.toLocaleTimeString()}
             </p>
           </div>
@@ -173,6 +174,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
             onClick={loadMarketData}
             disabled={isLoading}
             className="flex items-center gap-2 whitespace-nowrap"
+            size="sm"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Actualizando...' : 'Actualizar'}
@@ -180,33 +182,33 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {marketIndices.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card 
                 key={stat.name} 
-                className="p-4 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                className="p-3 sm:p-4 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-105"
                 onClick={() => openChart(stat.symbol, stat.name)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 truncate">{stat.name}</p>
-                    <p className="text-xl font-bold text-gray-900 truncate">${stat.value}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.name}</p>
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 truncate">${stat.value}</p>
                     <div className="flex items-center mt-1">
-                      <Icon className={`w-4 h-4 mr-1 flex-shrink-0 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
-                      <span className={`text-sm font-semibold truncate ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                      <Icon className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
+                      <span className={`text-xs sm:text-sm font-semibold truncate ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                         {stat.change} ({stat.changePercent.toFixed(2)}%)
                       </span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-full flex-shrink-0 ${stat.isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <Icon className={`w-5 h-5 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
+                  <div className={`p-2 sm:p-3 rounded-full flex-shrink-0 ${stat.isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
                   </div>
                 </div>
-                <div className="mt-3 flex items-center text-xs text-gray-500">
+                <div className="mt-2 flex items-center text-xs text-gray-500">
                   <MousePointer className="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">Haz clic para ver gráfico</span>
+                  <span className="truncate">Click para gráfico</span>
                 </div>
               </Card>
             );
@@ -214,7 +216,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Summary Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
             <div className="flex items-center gap-3">
               <TrendingUp className="w-6 h-6 text-green-600 flex-shrink-0" />
@@ -249,7 +251,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Real Market Data and Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <Card className="p-6 bg-white shadow-md">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-2">
@@ -374,7 +376,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
         </div>
 
         {/* Market Analysis with AI */}
-        <div className="mb-8">
+        <div className="mb-6">
           <MarketAnalysis marketIndices={marketIndices} marketData={marketData} />
         </div>
       </div>

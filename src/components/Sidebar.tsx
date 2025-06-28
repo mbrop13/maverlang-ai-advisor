@@ -3,13 +3,13 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
-  MessageSquare, 
   BarChart3, 
   PieChart, 
   TrendingUp, 
   Sparkles,
   ChevronRight
 } from 'lucide-react';
+import { ConversationManager } from './ConversationManager';
 
 interface SidebarProps {
   activeView: string;
@@ -19,12 +19,6 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeView, setActiveView, appState }: SidebarProps) => {
   const menuItems = [
-    {
-      id: 'chat',
-      name: 'AI Assistant',
-      icon: MessageSquare,
-      description: 'Chat con Maverlang-AI'
-    },
     {
       id: 'dashboard',
       name: 'Dashboard',
@@ -45,6 +39,16 @@ export const Sidebar = ({ activeView, setActiveView, appState }: SidebarProps) =
     }
   ];
 
+  const handleNewConversation = () => {
+    // Lógica para nueva conversación
+    console.log('Nueva conversación creada');
+  };
+
+  const handleSelectConversation = (conversationId: string) => {
+    // Lógica para seleccionar conversación
+    console.log('Conversación seleccionada:', conversationId);
+  };
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg">
       {/* Logo */}
@@ -64,6 +68,15 @@ export const Sidebar = ({ activeView, setActiveView, appState }: SidebarProps) =
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
+        {/* AI Assistant con conversaciones */}
+        <ConversationManager
+          activeView={activeView}
+          setActiveView={setActiveView}
+          onNewConversation={handleNewConversation}
+          onSelectConversation={handleSelectConversation}
+        />
+
+        {/* Otros elementos del menú */}
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
