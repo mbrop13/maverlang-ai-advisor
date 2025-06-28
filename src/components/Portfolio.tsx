@@ -375,7 +375,7 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
                 <h4 className="font-semibold text-blue-800 mb-2">Recomendaciones de Diversificación:</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
                   {sectorAllocation[0]?.percentage > 70 && (
-                    <li>• Considera reducir la exposición en {sectorAllocation[0].sector} (>{sectorAllocation[0].percentage.toFixed(1)}%)</li>
+                    <li>• Considera reducir la exposición en {sectorAllocation[0].sector} ({sectorAllocation[0].percentage.toFixed(1)}%)</li>
                   )}
                   {sectorAllocation.length < 3 && (
                     <li>• Agrega posiciones en otros sectores para mejorar la diversificación</li>
