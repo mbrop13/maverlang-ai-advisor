@@ -91,11 +91,6 @@ export const ConversationManager = ({
     ));
   };
 
-  // Exponer función para actualizar conversaciones desde el componente padre
-  React.useImperativeHandle(React.useRef(), () => ({
-    updateConversation
-  }));
-
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -176,7 +171,7 @@ export const ConversationManager = ({
               conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors ${
+                  className={`p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors group ${
                     currentConversationId === conversation.id ? 'bg-blue-50 border-blue-200' : ''
                   }`}
                   onClick={() => selectConversation(conversation.id)}
