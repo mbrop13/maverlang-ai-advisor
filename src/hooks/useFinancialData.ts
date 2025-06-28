@@ -78,7 +78,6 @@ export const useFinancialData = () => {
   // 10. Función para obtener datos reales de Finnhub (API gratuita y confiable)
   const fetchRealStockData = async (symbol: string) => {
     try {
-      // 11. Usar Finnhub API que es gratuita y confiable
       console.log(`📡 Obteniendo datos reales de Finnhub para ${symbol}`);
       
       // Obtener quote (precio actual)
@@ -113,15 +112,23 @@ export const useFinancialData = () => {
       const change = currentPrice - previousClose;
       const changePercent = (change / previousClose) * 100;
       
+      // Nombres especiales para índices
+      const indexNames: { [key: string]: string } = {
+        '^GSPC': 'S&P 500 Index',
+        '^IXIC': 'NASDAQ Composite Index',
+        '^DJI': 'Dow Jones Industrial Average',
+        '^VIX': 'CBOE Volatility Index'
+      };
+      
       console.log(`✅ Datos reales obtenidos para ${symbol}: $${currentPrice}`);
       
       return {
         symbol: symbol,
-        name: profileData.name || `${symbol} Inc.`,
+        name: indexNames[symbol] || profileData.name || `${symbol} Inc.`,
         price: Math.round(currentPrice * 100) / 100,
         change: Math.round(change * 100) / 100,
         changesPercentage: Math.round(changePercent * 100) / 100,
-        pe: null, // Finnhub no incluye P/E en quote básico
+        pe: null,
         eps: null,
         marketCap: profileData.marketCapitalization || null,
         sector: profileData.finnhubIndustry || 'Technology',
@@ -135,12 +142,12 @@ export const useFinancialData = () => {
         country: profileData.country || 'US',
         beta: null,
         volAvg: null,
-        range: `${quoteData.l} - ${quoteData.h}`, // Low - High del día
+        range: `${quoteData.l} - ${quoteData.h}`,
         dcfDiff: null,
         dcf: null,
-        high: quoteData.h, // High del día
-        low: quoteData.l,  // Low del día
-        open: quoteData.o, // Open del día
+        high: quoteData.h,
+        low: quoteData.l,
+        open: quoteData.o,
         volume: null
       };
     } catch (error) {
@@ -151,8 +158,12 @@ export const useFinancialData = () => {
 
   // 14. Función para generar datos simulados realistas
   const generateRealisticData = (symbol: string) => {
-    // 15. Precios base realistas para cada símbolo
+    // Precios base realistas para índices y acciones
     const basePrices: { [key: string]: number } = {
+      '^GSPC': 4750,
+      '^IXIC': 14800,
+      '^DJI': 37200,
+      '^VIX': 18,
       'AAPL': 175,
       'MSFT': 350,
       'GOOGL': 125,
@@ -169,8 +180,12 @@ export const useFinancialData = () => {
       'CSCO': 50
     };
 
-    // 16. Información de empresas
+    // Información de empresas e índices
     const companyInfo: { [key: string]: any } = {
+      '^GSPC': { name: 'S&P 500 Index', sector: 'Index', industry: 'Market Index' },
+      '^IXIC': { name: 'NASDAQ Composite Index', sector: 'Index', industry: 'Market Index' },
+      '^DJI': { name: 'Dow Jones Industrial Average', sector: 'Index', industry: 'Market Index' },
+      '^VIX': { name: 'CBOE Volatility Index', sector: 'Index', industry: 'Volatility Index' },
       'AAPL': { name: 'Apple Inc.', sector: 'Technology', industry: 'Consumer Electronics' },
       'MSFT': { name: 'Microsoft Corporation', sector: 'Technology', industry: 'Software' },
       'GOOGL': { name: 'Alphabet Inc.', sector: 'Technology', industry: 'Internet Services' },
@@ -198,19 +213,19 @@ export const useFinancialData = () => {
       price: Math.round(price * 100) / 100,
       change: Math.round(change * 100) / 100,
       changesPercentage: Math.round(changesPercentage * 100) / 100,
-      pe: Math.round((15 + Math.random() * 20) * 100) / 100, // P/E entre 15-35
+      pe: Math.round((15 + Math.random() * 20) * 100) / 100,
       eps: Math.round((price / (15 + Math.random() * 20)) * 100) / 100,
       marketCap: Math.round((price * (1000000000 + Math.random() * 2000000000000)) / 1000000) * 1000000,
       sector: info.sector,
       industry: info.industry,
-      website: `https://${symbol.toLowerCase()}.com`,
-      description: `Datos simulados realistas para ${info.name} (Finnhub no disponible)`,
+      website: `https://${symbol.toLowerCase().replace('^', '')}.com`,
+      description: `Datos simulados realistas para ${info.name}`,
       ceo: 'CEO Name',
       employees: Math.floor(50000 + Math.random() * 150000),
       exchange: 'NASDAQ',
       currency: 'USD',
       country: 'US',
-      beta: Math.round((0.5 + Math.random() * 1.5) * 100) / 100, // Beta entre 0.5-2.0
+      beta: Math.round((0.5 + Math.random() * 1.5) * 100) / 100,
       volAvg: Math.floor(10000000 + Math.random() * 50000000),
       range: `${Math.round((price * 0.7) * 100) / 100} - ${Math.round((price * 1.3) * 100) / 100}`,
       dcfDiff: null,

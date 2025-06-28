@@ -90,8 +90,11 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
   const updatePortfolioData = async () => {
     if (holdings.length === 0) return;
     
+    console.log('🔄 Actualizando datos del portafolio...');
     const symbols = holdings.map(h => h.symbol);
     const marketData = await fetchFinancialData(symbols);
+    
+    console.log('📊 Datos del mercado recibidos:', marketData);
     
     if (marketData.length > 0) {
       const updatedHoldings = holdings.map(holding => {
@@ -102,13 +105,15 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
           const change = ((currentPrice - holding.avgPrice) / holding.avgPrice) * 100;
           const totalGainLoss = (currentPrice - holding.avgPrice) * holding.shares;
           
+          console.log(`📈 ${holding.symbol}: $${currentPrice}, Ganancia/Pérdida: $${totalGainLoss}`);
+          
           return {
             ...holding,
             currentPrice,
             value,
             change,
-            name: marketStock.name,
-            sector: marketStock.sector || 'Technology',
+            name: marketStock.name || holding.name,
+            sector: marketStock.sector || holding.sector,
             totalGainLoss
           };
         }
@@ -187,6 +192,8 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
   const sectorAllocation = calculateSectorAllocation();
 
   const addNewPosition = async (newPosition: { symbol: string; shares: number; avgPrice: number }) => {
+    console.log('➕ Agregando nueva posición:', newPosition);
+    
     // Verificar si ya existe la posición
     const existingIndex = holdings.findIndex(h => h.symbol === newPosition.symbol);
     
@@ -204,6 +211,11 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
         avgPrice: newAvgPrice
       };
       setHoldings(updatedHoldings);
+      
+      toast({
+        title: "Posición actualizada",
+        description: `${newPosition.symbol}: ${totalShares} acciones con precio promedio de $${newAvgPrice.toFixed(2)}`,
+      });
     } else {
       // Agregar nueva posición
       const newHolding: Holding = {
@@ -219,10 +231,17 @@ export const Portfolio = ({ appState, updateAppState }: PortfolioProps) => {
         totalGainLoss: 0
       };
       setHoldings(prev => [...prev, newHolding]);
+      
+      toast({
+        title: "Posición agregada",
+        description: `${newPosition.shares} acciones de ${newPosition.symbol} agregadas al portafolio`,
+      });
     }
     
-    // Actualizar datos después de agregar
-    setTimeout(() => updatePortfolioData(), 500);
+    // Actualizar datos después de agregar (con delay para asegurar que el estado se actualice)
+    setTimeout(() => {
+      updatePortfolioData();
+    }, 500);
   };
 
   const removeHolding = (symbol: string) => {

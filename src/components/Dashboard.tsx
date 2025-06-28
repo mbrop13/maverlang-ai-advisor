@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,11 +33,11 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; name: string } | null>(null);
   const [customStocks, setCustomStocks] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA']);
 
-  // Datos de índices principales usando ETFs para obtener datos reales
+  // Datos de índices principales - CORREGIDOS con símbolos reales
   const [marketIndices, setMarketIndices] = useState([
     {
       name: 'S&P 500',
-      symbol: 'SPY',
+      symbol: '^GSPC',
       value: '0.00',
       change: '+0.00',
       changePercent: 0,
@@ -47,7 +46,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
     },
     {
       name: 'NASDAQ',
-      symbol: 'QQQ',
+      symbol: '^IXIC',
       value: '0.00',
       change: '+0.00',
       changePercent: 0,
@@ -56,7 +55,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
     },
     {
       name: 'DOW JONES',
-      symbol: 'DIA',
+      symbol: '^DJI',
       value: '0.00',
       change: '0.00',
       changePercent: 0,
@@ -64,8 +63,8 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
       icon: TrendingDown
     },
     {
-      name: 'Volatilidad (VIX)',
-      symbol: 'VXX',
+      name: 'VIX',
+      symbol: '^VIX',
       value: '0.00',
       change: '0.00',
       changePercent: 0,
@@ -79,7 +78,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
       console.log('🔄 Cargando datos del mercado...');
       
       // Cargar datos de índices usando símbolos correctos
-      const indexSymbols = ['SPY', 'QQQ', 'DIA', 'VXX'];
+      const indexSymbols = ['^GSPC', '^IXIC', '^DJI', '^VIX'];
       const indexData = await fetchFinancialData(indexSymbols);
       
       // Actualizar índices con datos reales
@@ -364,7 +363,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
                 {marketIndices.slice(0, 4).map((index) => (
                   <div key={index.name} className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-600 truncate">{index.name}</p>
-                    <p className="font-semibold text-gray-900">${index.value}</p>
+                    <p className="font-semibold text-gray-900">{index.value}</p>
                     <p className={`text-xs ${index.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                       {index.change}
                     </p>

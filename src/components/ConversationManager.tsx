@@ -39,30 +39,45 @@ export const ConversationManager = ({
 
   // Cargar conversaciones del localStorage al inicializar
   useEffect(() => {
-    const savedConversations = localStorage.getItem('maverlang_conversations');
-    if (savedConversations) {
-      const parsed = JSON.parse(savedConversations);
-      setConversations(parsed.map((conv: any) => ({
-        ...conv,
-        createdAt: new Date(conv.createdAt)
-      })));
+    try {
+      const savedConversations = localStorage.getItem('maverlang_conversations');
+      if (savedConversations) {
+        const parsed = JSON.parse(savedConversations);
+        const conversationsWithDates = parsed.map((conv: any) => ({
+          ...conv,
+          createdAt: new Date(conv.createdAt)
+        }));
+        setConversations(conversationsWithDates);
+        console.log('📚 Conversaciones cargadas:', conversationsWithDates.length);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando conversaciones:', error);
+      setConversations([]);
     }
   }, []);
 
   // Guardar conversaciones en localStorage cuando cambien
   useEffect(() => {
-    localStorage.setItem('maverlang_conversations', JSON.stringify(conversations));
+    if (conversations.length > 0) {
+      try {
+        localStorage.setItem('maverlang_conversations', JSON.stringify(conversations));
+        console.log('💾 Conversaciones guardadas:', conversations.length);
+      } catch (error) {
+        console.error('❌ Error guardando conversaciones:', error);
+      }
+    }
   }, [conversations]);
 
   const createNewConversation = () => {
     const newConversation: Conversation = {
-      id: `conv_${Date.now()}`,
+      id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       title: `Conversación ${conversations.length + 1}`,
       createdAt: new Date(),
       lastMessage: 'Nueva conversación iniciada',
       messageCount: 0
     };
 
+    console.log('➕ Creando nueva conversación:', newConversation);
     setConversations(prev => [newConversation, ...prev]);
     onNewConversation();
     onSelectConversation(newConversation.id);
@@ -70,6 +85,7 @@ export const ConversationManager = ({
   };
 
   const selectConversation = (conversationId: string) => {
+    console.log('🔄 Seleccionando conversación:', conversationId);
     onSelectConversation(conversationId);
     setActiveView('chat');
     setIsExpanded(false);
@@ -77,15 +93,17 @@ export const ConversationManager = ({
 
   const deleteConversation = (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('🗑️ Eliminando conversación:', conversationId);
     setConversations(prev => prev.filter(conv => conv.id !== conversationId));
     
     // Si se elimina la conversación activa, crear una nueva
     if (currentConversationId === conversationId) {
-      createNewConversation();
+      setTimeout(() => createNewConversation(), 100);
     }
   };
 
   const updateConversation = (conversationId: string, updates: Partial<Conversation>) => {
+    console.log('📝 Actualizando conversación:', conversationId, updates);
     setConversations(prev => prev.map(conv => 
       conv.id === conversationId ? { ...conv, ...updates } : conv
     ));
@@ -103,6 +121,13 @@ export const ConversationManager = ({
     if (diffHours < 24) return `${diffHours}h`;
     return `${diffDays}d`;
   };
+
+  // Crear conversación inicial si no hay ninguna
+  useEffect(() => {
+    if (conversations.length === 0 && activeView === 'chat') {
+      createNewConversation();
+    }
+  }, [activeView]);
 
   return (
     <div className="relative">
@@ -125,7 +150,7 @@ export const ConversationManager = ({
               AI Assistant
             </div>
             <div className={`text-xs ${activeView === 'chat' ? 'text-blue-100' : 'text-gray-500'}`}>
-              Chat con Maverlang-AI
+              Chat con Maverlang-AI ({conversations.length} conversaciones)
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -154,7 +179,7 @@ export const ConversationManager = ({
         <Card className="absolute top-full left-0 right-0 mt-1 z-50 shadow-lg border max-h-80 overflow-hidden">
           <div className="p-3 border-b bg-gray-50">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-900 text-sm">Conversaciones</span>
+              <span className="font-semibold text-gray-900 text-sm">Conversaciones ({conversations.length})</span>
               <Button
                 onClick={createNewConversation}
                 size="sm"
