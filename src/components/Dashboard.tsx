@@ -10,10 +10,13 @@ import {
   Activity,
   PieChart,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  MousePointer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancialData } from '@/hooks/useFinancialData';
+import { TradingChart } from './TradingChart';
+import { MarketAnalysis } from './MarketAnalysis';
 
 interface DashboardProps {
   appState: any;
@@ -26,9 +29,50 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   
   const [marketData, setMarketData] = useState<any[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [selectedChart, setSelectedChart] = useState<{ symbol: string; name: string } | null>(null);
 
   // Símbolos para el dashboard
   const dashboardSymbols = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA'];
+
+  // Datos de índices principales con símbolos reales
+  const [marketIndices, setMarketIndices] = useState([
+    {
+      name: 'S&P 500',
+      symbol: '^GSPC',
+      value: '4,782.20',
+      change: '+1.2%',
+      changePercent: 1.2,
+      isPositive: true,
+      icon: TrendingUp
+    },
+    {
+      name: 'NASDAQ',
+      symbol: '^IXIC',
+      value: '14,963.87',
+      change: '+2.1%',
+      changePercent: 2.1,
+      isPositive: true,
+      icon: TrendingUp
+    },
+    {
+      name: 'DOW JONES',
+      symbol: '^DJI',
+      value: '37,428.92',
+      change: '-0.3%',
+      changePercent: -0.3,
+      isPositive: false,
+      icon: TrendingDown
+    },
+    {
+      name: 'VIX',
+      symbol: '^VIX',
+      value: '13.42',
+      change: '-5.7%',
+      changePercent: -5.7,
+      isPositive: true,
+      icon: Activity
+    }
+  ]);
 
   const loadMarketData = async () => {
     try {
@@ -55,51 +99,31 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
     loadMarketData();
   }, []);
 
-  // Datos simulados para índices principales
-  const [marketIndices, setMarketIndices] = useState([
-    {
-      name: 'S&P 500',
-      value: '4,782.20',
-      change: '+1.2%',
-      isPositive: true,
-      icon: TrendingUp
-    },
-    {
-      name: 'NASDAQ',
-      value: '14,963.87',
-      change: '+2.1%',
-      isPositive: true,
-      icon: TrendingUp
-    },
-    {
-      name: 'DOW JONES',
-      value: '37,428.92',
-      change: '-0.3%',
-      isPositive: false,
-      icon: TrendingDown
-    },
-    {
-      name: 'VIX',
-      value: '13.42',
-      change: '-5.7%',
-      isPositive: true,
-      icon: Activity
-    }
-  ]);
-
   const refreshAllData = async () => {
     await loadMarketData();
     
     // Actualizar índices con variación aleatoria
-    setMarketIndices(prev => prev.map(stat => ({
-      ...stat,
-      value: (parseFloat(stat.value.replace(',', '')) + (Math.random() - 0.5) * 100).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }),
-      change: `${Math.random() > 0.5 ? '+' : ''}${((Math.random() - 0.5) * 4).toFixed(1)}%`,
-      isPositive: Math.random() > 0.5
-    })));
+    setMarketIndices(prev => prev.map(stat => {
+      const variation = (Math.random() - 0.5) * 4; // Variación del ±2%
+      const newChangePercent = stat.changePercent + variation;
+      const isPositive = newChangePercent > 0;
+      
+      return {
+        ...stat,
+        change: `${isPositive ? '+' : ''}${newChangePercent.toFixed(1)}%`,
+        changePercent: newChangePercent,
+        isPositive: isPositive,
+        icon: isPositive ? TrendingUp : TrendingDown
+      };
+    }));
+  };
+
+  const openChart = (symbol: string, name: string) => {
+    setSelectedChart({ symbol, name });
+  };
+
+  const closeChart = () => {
+    setSelectedChart(null);
   };
 
   return (
@@ -129,7 +153,11 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
           {marketIndices.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.name} className="p-6 bg-white shadow-md hover:shadow-lg transition-shadow">
+              <Card 
+                key={stat.name} 
+                className="p-6 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                onClick={() => openChart(stat.symbol, stat.name)}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">{stat.name}</p>
@@ -145,13 +173,17 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
                     <Icon className={`w-6 h-6 ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`} />
                   </div>
                 </div>
+                <div className="mt-3 flex items-center text-xs text-gray-500">
+                  <MousePointer className="w-3 h-3 mr-1" />
+                  Haz clic para ver gráfico
+                </div>
               </Card>
             );
           })}
         </div>
 
-        {/* Real Market Data */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Real Market Data and Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 bg-white shadow-md">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-5 h-5 text-blue-600" />
@@ -159,7 +191,11 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
             </div>
             <div className="space-y-4">
               {marketData.map((stock) => (
-                <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div 
+                  key={stock.symbol} 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer hover:scale-102"
+                  onClick={() => openChart(stock.symbol, stock.name)}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-bold text-sm">{stock.symbol.charAt(0)}</span>
@@ -179,6 +215,10 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
                         {stock.changesPercentage > 0 ? '+' : ''}{stock.changesPercentage}%
                       </Badge>
                     </div>
+                    <div className="flex items-center text-xs text-gray-500 mt-1">
+                      <MousePointer className="w-3 h-3 mr-1" />
+                      Ver gráfico
+                    </div>
                   </div>
                 </div>
               ))}
@@ -188,7 +228,7 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
           <Card className="p-6 bg-white shadow-md">
             <div className="flex items-center gap-2 mb-4">
               <PieChart className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Análisis de Mercado</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Resumen de Mercado</h3>
             </div>
             <div className="space-y-4">
               <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
@@ -225,7 +265,19 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
             </div>
           </Card>
         </div>
+
+        {/* Market Analysis with AI */}
+        <MarketAnalysis marketIndices={marketIndices} marketData={marketData} />
       </div>
+
+      {/* Trading Chart Modal */}
+      {selectedChart && (
+        <TradingChart
+          symbol={selectedChart.symbol}
+          name={selectedChart.name}
+          onClose={closeChart}
+        />
+      )}
     </div>
   );
 };
