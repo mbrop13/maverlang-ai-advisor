@@ -158,12 +158,12 @@ export const useFinancialData = () => {
 
   // 14. Función para generar datos simulados realistas
   const generateRealisticData = (symbol: string) => {
-    // Precios base realistas para índices y acciones
+    // Precios base realistas para índices y acciones (actualizados 2024)
     const basePrices: { [key: string]: number } = {
-      '^GSPC': 4750,
-      '^IXIC': 14800,
-      '^DJI': 37200,
-      '^VIX': 18,
+      '^GSPC': 5180,  // S&P 500 - rango típico 5000-5500
+      '^IXIC': 16800,  // NASDAQ - rango típico 15000-18000  
+      '^DJI': 39400,   // DOW JONES - rango típico 38000-41000
+      '^VIX': 14.5,    // VIX - rango típico 12-25
       'AAPL': 175,
       'MSFT': 350,
       'GOOGL': 125,

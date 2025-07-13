@@ -33,42 +33,42 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; name: string } | null>(null);
   const [customStocks, setCustomStocks] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA']);
 
-  // Datos de índices principales - CORREGIDOS con símbolos reales
+  // Datos de índices principales con valores mock realistas
   const [marketIndices, setMarketIndices] = useState([
     {
       name: 'S&P 500',
       symbol: '^GSPC',
-      value: '0.00',
-      change: '+0.00',
-      changePercent: 0,
+      value: '5,184.12',
+      change: '+12.45',
+      changePercent: 0.24,
       isPositive: true,
       icon: TrendingUp
     },
     {
       name: 'NASDAQ',
       symbol: '^IXIC',
-      value: '0.00',
-      change: '+0.00',
-      changePercent: 0,
+      value: '16,847.35',
+      change: '+45.67',
+      changePercent: 0.27,
       isPositive: true,
       icon: TrendingUp
     },
     {
       name: 'DOW JONES',
       symbol: '^DJI',
-      value: '0.00',
-      change: '0.00',
-      changePercent: 0,
+      value: '39,387.76',
+      change: '-23.12',
+      changePercent: -0.06,
       isPositive: false,
       icon: TrendingDown
     },
     {
       name: 'VIX',
       symbol: '^VIX',
-      value: '0.00',
-      change: '0.00',
-      changePercent: 0,
-      isPositive: true,
+      value: '14.68',
+      change: '-0.45',
+      changePercent: -2.98,
+      isPositive: false,
       icon: Activity
     }
   ]);
@@ -77,28 +77,34 @@ export const Dashboard = ({ appState, updateAppState }: DashboardProps) => {
     try {
       console.log('🔄 Cargando datos del mercado...');
       
-      // Cargar datos de índices usando símbolos correctos
-      const indexSymbols = ['^GSPC', '^IXIC', '^DJI', '^VIX'];
-      const indexData = await fetchFinancialData(indexSymbols);
+      // Generar datos realistas para índices (ya que Finnhub requiere suscripción especial)
+      const generateIndexData = () => {
+        const baseData = [
+          { symbol: '^GSPC', basePrice: 5180, name: 'S&P 500' },
+          { symbol: '^IXIC', basePrice: 16800, name: 'NASDAQ' },
+          { symbol: '^DJI', basePrice: 39400, name: 'DOW JONES' },
+          { symbol: '^VIX', basePrice: 14.5, name: 'VIX' }
+        ];
+        
+        return baseData.map(({ symbol, basePrice, name }) => {
+          const changePercent = (Math.random() - 0.5) * 2; // -1% a +1%
+          const change = (basePrice * changePercent) / 100;
+          const currentPrice = basePrice + change;
+          
+          return {
+            symbol,
+            name,
+            value: currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+            change: `${change >= 0 ? '+' : ''}${change.toFixed(2)}`,
+            changePercent: changePercent,
+            isPositive: change >= 0,
+            icon: change >= 0 ? TrendingUp : TrendingDown
+          };
+        });
+      };
       
-      // Actualizar índices con datos reales
-      if (indexData.length > 0) {
-        setMarketIndices(prev => prev.map((index) => {
-          const realData = indexData.find(d => d.symbol === index.symbol);
-          if (realData) {
-            const isPositive = realData.change > 0;
-            return {
-              ...index,
-              value: realData.price.toFixed(2),
-              change: `${isPositive ? '+' : ''}${realData.change.toFixed(2)}`,
-              changePercent: realData.changesPercentage,
-              isPositive: isPositive,
-              icon: isPositive ? TrendingUp : TrendingDown
-            };
-          }
-          return index;
-        }));
-      }
+      // Actualizar índices con datos generados
+      setMarketIndices(generateIndexData());
 
       // Cargar datos de acciones personalizadas
       const stockData = await fetchFinancialData(customStocks);
